@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Details</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24; --surface3: #20202e;
+      --accent: #e8b84b; --accent2: #5b8af5; --text: #f0eff4; --muted: #7a7a8c;
+      --border: rgba(255,255,255,0.07); --green: #4caf50; --red: #e05252;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; gap: 2rem; height: 64px;
+    }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 2px; color: var(--accent); cursor: pointer; }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 0.85rem;
+      font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 6px 0; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); border-color: var(--accent); }
+    .back-btn {
+      margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); padding: 7px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem; cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    /* Spinner */
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 8rem 0; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+
+    /* Hero Section */
+    .hero {
+      position: relative; overflow: hidden;
+      min-height: 480px; display: flex; align-items: flex-end;
+    }
+    .hero-backdrop {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center top;
+      filter: blur(2px) brightness(0.3); transform: scale(1.05);
+    }
+    .hero-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(10,10,15,0.2) 0%, rgba(10,10,15,0.6) 50%, var(--bg) 100%);
+    }
+    .hero-content {
+      position: relative; z-index: 1; display: flex; gap: 2.5rem; padding: 3rem 2rem 2.5rem;
+      align-items: flex-end; max-width: 1100px; margin: 0 auto; width: 100%;
+    }
+    .poster {
+      width: 200px; min-width: 200px; border-radius: 12px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.7); border: 1px solid var(--border);
+    }
+    .hero-info { flex: 1; }
+    .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 3.2rem; letter-spacing: 2px; line-height: 1.05; margin-bottom: 0.75rem; }
+    .genre-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .pill {
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 0.3px;
+      background: rgba(232,184,75,0.12); color: var(--accent);
+      border: 1px solid rgba(232,184,75,0.3); text-decoration: none;
+      transition: background 0.2s;
+    }
+    .pill:hover { background: rgba(232,184,75,0.22); }
+    .tagline { font-size: 1rem; color: var(--muted); font-style: italic; margin-bottom: 1rem; }
+    .overview { font-size: 0.9rem; line-height: 1.7; color: #c5c5d5; max-width: 640px; margin-bottom: 1.5rem; }
+
+    /* Stats grid */
+    .stats-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+    .stat { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .stat-value { font-size: 1rem; font-weight: 600; }
+    .stat-value.gold { color: var(--accent); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red { color: var(--red); }
+
+    /* Main content */
+    .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* Section */
+    .section { margin-bottom: 2.5rem; }
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 2px;
+      color: var(--text); margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .section-count { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+
+    /* People grid */
+    .people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; }
+    .person-card {
+      background: var(--surface); border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border); text-decoration: none; color: inherit;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      display: block;
+    }
+    .person-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.45); border-color: rgba(232,184,75,0.25); }
+    .person-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+    .person-card .person-info { padding: 0.6rem; }
+    .person-name { font-size: 0.8rem; font-weight: 600; margin-bottom: 2px; line-height: 1.3; }
+    .person-role { font-size: 0.72rem; color: var(--muted); }
+
+    /* Show more */
+    .extra-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .toggle-btn {
+      background: none; border: 1px solid var(--border); color: var(--accent);
+      padding: 8px 18px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem; cursor: pointer; margin-top: 1rem; transition: border-color 0.2s, background 0.2s;
+    }
+    .toggle-btn:hover { background: rgba(232,184,75,0.08); border-color: var(--accent); }
+
+    /* Trailer */
+    .trailer-wrap { border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; }
+    .trailer-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+
+    /* Error */
+    .error-msg { color: var(--red); text-align: center; padding: 3rem; font-size: 0.95rem; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero-content { flex-direction: column; align-items: flex-start; }
+      .poster { width: 140px; min-width: 140px; }
+      .hero-title { font-size: 2.2rem; }
+      .main { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="history.back()">TMDB</div>
+  <div class="nav-links">
+    <a href="index.html">Movies</a>
+    <a href="series.html">TV Series</a>
+  </div>
+  <a class="back-btn" onclick="history.back()">← Back</a>
+</nav>
+
+<div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
+<div id="main-content" class="hidden"></div>
+
+<script>
+  const API_KEY = "6e3d6ad4aea48a0574572ba2f174e8bc";
+  const IMG = "https://image.tmdb.org/t/p/w500";
+  const IMG_ORIG = "https://image.tmdb.org/t/p/original";
+  const params = new URLSearchParams(window.location.search);
+  const movieId = params.get("movieId");
+  const seriesId = params.get("seriesId");
+
+  const spinner = document.getElementById("spinner-container");
+  const mainContent = document.getElementById("main-content");
+
+  function fmt(n) {
+    if (!n) return "N/A";
+    if (n >= 1e9) return `$${(n/1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `$${(n/1e6).toFixed(1)}M`;
+    return `$${n.toLocaleString()}`;
+  }
+
+  function renderPersonCard(person, roleKey) {
+    const img = person.profile_path ? `${IMG}${person.profile_path}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=1a1a24&color=7a7a8c&size=200`;
+    const role = person[roleKey] || "—";
+    return `
+      <a href="person.html?personId=${person.id}" class="person-card">
+        <img src="${img}" alt="${person.name}" loading="lazy">
+        <div class="person-info">
+          <div class="person-name">${person.name}</div>
+          <div class="person-role">${role}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  function buildPeopleSection(id, title, list, roleKey, initialCount = 8) {
+    if (!list.length) return '';
+    const initial = list.slice(0, initialCount);
+    const extra = list.slice(initialCount);
+    const hasMore = extra.length > 0;
+    return `
+      <div class="section">
+        <div class="section-title">${title} <span class="section-count">${list.length}</span></div>
+        <div class="people-grid">${initial.map(p => renderPersonCard(p, roleKey)).join('')}</div>
+        ${hasMore ? `
+          <div id="extra-${id}" class="extra-people hidden">${extra.map(p => renderPersonCard(p, roleKey)).join('')}</div>
+          <button class="toggle-btn" data-target="${id}">Show more</button>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  if (!movieId && !seriesId) {
+    spinner.classList.add('hidden');
+    mainContent.classList.remove('hidden');
+    mainContent.innerHTML = `<p class="error-msg">Error: No movie or series ID provided.</p>`;
+  } else {
+    const url = movieId
+      ? `https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}&append_to_response=videos,credits`
+      : `https://api.themoviedb.org/3/tv/${seriesId}?api_key=${API_KEY}&append_to_response=videos,credits`;
+
+    fetch(url, { headers: { accept: "application/json" } })
+      .then(r => r.json())
+      .then(data => {
+        spinner.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+
+        const title = data.title || data.name || data.original_title || data.original_name || "Unknown";
+        const poster = data.poster_path ? `${IMG}${data.poster_path}` : '';
+        const backdrop = data.backdrop_path ? `${IMG_ORIG}${data.backdrop_path}` : poster;
+        const releaseDate = data.release_date || data.first_air_date || '';
+        const year = releaseDate?.slice(0, 4) || '—';
+        const rating = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
+        const votes = data.vote_count ? data.vote_count.toLocaleString() : 'N/A';
+        const runtime = data.runtime ? `${data.runtime} min` : (data.episode_run_time?.[0] ? `${data.episode_run_time[0]} min/ep` : 'N/A');
+        const genres = data.genres || [];
+        const overview = data.overview || "No description available.";
+        const tagline = data.tagline || '';
+        const status = data.status || '—';
+        const language = data.original_language?.toUpperCase() || '—';
+        const budget = movieId ? fmt(data.budget) : null;
+        const revenue = movieId ? fmt(data.revenue) : null;
+        const profit = (movieId && data.budget && data.revenue)
+          ? data.revenue - data.budget : null;
+        const seasons = data.number_of_seasons;
+        const episodes = data.number_of_episodes;
+        const popularity = data.popularity ? Math.round(data.popularity) : 'N/A';
+
+        document.title = `${title} — TMDB`;
+
+        // Trailer
+        const trailerKey = data.videos?.results?.find(v => v.site === "YouTube" && v.type === "Trailer")?.key;
+        const trailerHtml = trailerKey ? `
+          <div class="section">
+            <div class="section-title">Trailer</div>
+            <div class="trailer-wrap">
+              <iframe src="https://www.youtube.com/embed/${trailerKey}" allowfullscreen></iframe>
+            </div>
+          </div>
+        ` : '';
+
+        // Cast & Crew
+        const castList = data.credits?.cast || [];
+        const crewList = data.credits?.crew || [];
+        const castSection = buildPeopleSection('cast', 'Cast', castList, 'character', 8);
+        const crewSection = buildPeopleSection('crew', 'Crew', crewList, 'job', 8);
+
+        // Stats
+        const statsHtml = `
+          <div class="stats-grid">
+            <div class="stat"><span class="stat-label">Rating</span><span class="stat-value gold">★ ${rating}</span></div>
+            <div class="stat"><span class="stat-label">Votes</span><span class="stat-value">${votes}</span></div>
+            <div class="stat"><span class="stat-label">Year</span><span class="stat-value">${year}</span></div>
+            <div class="stat"><span class="stat-label">Runtime</span><span class="stat-value">${runtime}</span></div>
+            <div class="stat"><span class="stat-label">Language</span><span class="stat-value">${language}</span></div>
+            <div class="stat"><span class="stat-label">Status</span><span class="stat-value">${status}</span></div>
+            <div class="stat"><span class="stat-label">Popularity</span><span class="stat-value">${popularity}</span></div>
+            ${budget ? `<div class="stat"><span class="stat-label">Budget</span><span class="stat-value">${budget}</span></div>` : ''}
+            ${revenue ? `<div class="stat"><span class="stat-label">Revenue</span><span class="stat-value green">${revenue}</span></div>` : ''}
+            ${profit !== null ? `<div class="stat"><span class="stat-label">Profit</span><span class="stat-value ${profit >= 0 ? 'green' : 'red'}">${profit >= 0 ? '+' : ''}${fmt(profit)}</span></div>` : ''}
+            ${seasons ? `<div class="stat"><span class="stat-label">Seasons</span><span class="stat-value">${seasons}</span></div>` : ''}
+            ${episodes ? `<div class="stat"><span class="stat-label">Episodes</span><span class="stat-value">${episodes}</span></div>` : ''}
+          </div>
+        `;
+
+        mainContent.innerHTML = `
+          <div class="hero">
+            <div class="hero-backdrop" style="background-image: url('${backdrop}')"></div>
+            <div class="hero-gradient"></div>
+            <div class="hero-content">
+              ${poster ? `<img class="poster" src="${poster}" alt="${title}">` : ''}
+              <div class="hero-info">
+                <h1 class="hero-title">${title}</h1>
+                ${genres.length ? `<div class="genre-pills">${genres.map(g => `<a href="genre.html?genreId=${g.id}" class="pill">${g.name}</a>`).join('')}</div>` : ''}
+                ${tagline ? `<p class="tagline">"${tagline}"</p>` : ''}
+                <p class="overview">${overview}</p>
+                ${statsHtml}
+              </div>
+            </div>
+          </div>
+          <div class="main">
+            ${castSection}
+            ${crewSection}
+            ${trailerHtml}
+          </div>
+        `;
+
+        // Toggle buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const el = document.getElementById(`extra-${btn.dataset.target}`);
+            const isHidden = el.classList.toggle('hidden');
+            btn.textContent = isHidden ? 'Show more' : 'Show less';
+          });
+        });
+      })
+      .catch(err => {
+        spinner.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        mainContent.innerHTML = `<p class="error-msg">Failed to load details. Please try again.</p>`;
+        console.error(err);
+      });
+  }
+</script>
+</body>
+</html>

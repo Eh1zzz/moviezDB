@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genre — TMDB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24;
+      --accent: #e8b84b; --text: #f0eff4; --muted: #7a7a8c; --border: rgba(255,255,255,0.07);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; gap: 2rem; height: 64px;
+    }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 2px; color: var(--accent); }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 0.85rem;
+      font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 6px 0; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); border-color: var(--accent); }
+    .back-btn {
+      margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); padding: 7px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem; cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--accent); }
+    .page-header { padding: 3rem 2rem 1.5rem; }
+    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 3px; }
+    .page-title span { color: var(--accent); }
+    .grid-container {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.25rem; padding: 1rem 2rem 3rem;
+    }
+    .card {
+      background: var(--surface); border-radius: 10px; overflow: hidden;
+      cursor: pointer; transition: transform 0.25s, box-shadow 0.25s;
+      border: 1px solid var(--border); text-decoration: none; color: inherit; display: block; position: relative;
+    }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .card:hover img { filter: brightness(1.08); }
+    .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; transition: filter 0.25s; }
+    .card-badge {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      color: var(--accent); font-size: 0.75rem; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .card-body { padding: 0.75rem; }
+    .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+    .card-meta { font-size: 0.75rem; color: var(--muted); }
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 8rem 0; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+    .error-msg { color: #e05252; text-align: center; padding: 3rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">TMDB</div>
+    <div class="nav-links">
+      <a href="index.html">Movies</a>
+      <a href="series.html">TV Series</a>
+    </div>
+    <a class="back-btn" onclick="history.back()">← Back</a>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-title" id="genre-title">GENRE <span>MOVIES</span></div>
+  </div>
+
+  <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
+  <div id="container" class="grid-container hidden"></div>
+
+<script>
+  const API_KEY = "6e3d6ad4aea48a0574572ba2f174e8bc";
+  const IMG = "https://image.tmdb.org/t/p/w500";
+  const spinner = document.getElementById("spinner-container");
+  const container = document.getElementById("container");
+  const params = new URLSearchParams(window.location.search);
+  const genreId = params.get("genreId");
+  const genreName = params.get("genreName");
+
+  if (genreName) {
+    document.getElementById('genre-title').innerHTML = `<span style="color:var(--accent)">${genreName.toUpperCase()}</span> MOVIES`;
+    document.title = `${genreName} — TMDB`;
+  }
+
+  if (!genreId) {
+    spinner.classList.add('hidden');
+    container.classList.remove('hidden');
+    container.innerHTML = `<p class="error-msg">Error: No genre ID provided.</p>`;
+  } else {
+    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=${genreId}&sort_by=popularity.desc`, {
+      headers: { accept: "application/json" }
+    })
+      .then(r => r.json())
+      .then(data => {
+        spinner.classList.add('hidden');
+        container.classList.remove('hidden');
+        const results = data.results || [];
+        if (!results.length) {
+          container.innerHTML = `<p class="error-msg">No movies found for this genre.</p>`;
+          return;
+        }
+        container.innerHTML = results.map(m => `
+          <a href="details.html?movieId=${m.id}" class="card">
+            <img src="${m.poster_path ? IMG + m.poster_path : ''}" alt="${m.title || 'Movie'}" loading="lazy">
+            <div class="card-badge">★ ${m.vote_average?.toFixed(1) || 'N/A'}</div>
+            <div class="card-body">
+              <div class="card-title">${m.title || 'Untitled'}</div>
+              <div class="card-meta">${m.release_date?.slice(0,4) || '—'}</div>
+            </div>
+          </a>
+        `).join('');
+      })
+      .catch(() => {
+        spinner.classList.add('hidden');
+        container.innerHTML = `<p class="error-msg">Failed to load genre movies.</p>`;
+      });
+  }
+</script>
+</body>
+</html>

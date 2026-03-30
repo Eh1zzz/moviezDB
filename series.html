@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TMDB — TV Series</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #1a1a24;
+      --accent: #e8b84b; --text: #f0eff4; --muted: #7a7a8c; --border: rgba(255,255,255,0.07);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; gap: 2rem; height: 64px;
+    }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 2px; color: var(--accent); }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 0.85rem;
+      font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 6px 0; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-links a.active, .nav-links a:hover { color: var(--text); border-color: var(--accent); }
+    .page-header { padding: 3rem 2rem 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 3px; line-height: 1; }
+    .page-title span { color: var(--accent); }
+    .page-controls { display: flex; align-items: center; gap: 0.75rem; }
+    .page-controls input {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; width: 90px; outline: none; transition: border-color 0.2s;
+    }
+    .page-controls input:focus { border-color: var(--accent); }
+    .btn {
+      background: var(--accent); color: #000; border: none;
+      padding: 9px 20px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .grid-container {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1.25rem; padding: 1rem 2rem 3rem;
+    }
+    .card {
+      background: var(--surface); border-radius: 10px; overflow: hidden;
+      cursor: pointer; transition: transform 0.25s, box-shadow 0.25s;
+      border: 1px solid var(--border); text-decoration: none; color: inherit; display: block; position: relative;
+    }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .card:hover img { filter: brightness(1.08); }
+    .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; transition: filter 0.25s; }
+    .card-badge {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      color: var(--accent); font-size: 0.75rem; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .card-body { padding: 0.75rem; }
+    .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+    .card-meta { font-size: 0.75rem; color: var(--muted); }
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 8rem 0; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--surface2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">TMDB</div>
+    <div class="nav-links">
+      <a href="index.html">Movies</a>
+      <a href="series.html" class="active">TV Series</a>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-title">TRENDING <span>TV SERIES</span></div>
+    <div class="page-controls">
+      <input type="number" min="1" value="1" id="inputPageNumber" placeholder="Page">
+      <button class="btn" id="changePageBtn">Go</button>
+    </div>
+  </div>
+
+  <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
+  <div id="container" class="grid-container hidden"></div>
+
+<script>
+  const spinnerContainer = document.getElementById('spinner-container');
+  const container = document.getElementById('container');
+  const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZTNkNmFkNGFlYTQ4YTA1NzQ1NzJiYTJmMTc0ZThiYyIsIm5iZiI6MTc3MTk0MDUxMy43NTUsInN1YiI6IjY5OWRhYWExYzIyNzIyMzlhZjZkMDJiZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hAN81nQsrSnKeNp7Ix4n8bcwi6lv5rSD1XM78nOqD6E";
+  const IMG = "https://image.tmdb.org/t/p/w500";
+
+  async function fetchSeries(page = 1) {
+    spinnerContainer.classList.remove('hidden');
+    container.classList.add('hidden');
+    const res = await fetch(`https://api.themoviedb.org/3/trending/tv/day?language=en-US&page=${page}`, {
+      headers: { accept: "application/json", Authorization: `Bearer ${TOKEN}` }
+    });
+    const data = await res.json();
+    spinnerContainer.classList.add('hidden');
+    container.classList.remove('hidden');
+    container.innerHTML = data.results.map(s => `
+      <a href="details.html?seriesId=${s.id}" class="card">
+        <img src="${s.poster_path ? IMG + s.poster_path : ''}" alt="${s.name || 'Series'}" loading="lazy">
+        <div class="card-badge">★ ${s.vote_average?.toFixed(1) || 'N/A'}</div>
+        <div class="card-body">
+          <div class="card-title">${s.name || s.original_name || 'No Title'}</div>
+          <div class="card-meta">${s.first_air_date?.slice(0,4) || '—'}</div>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  document.getElementById('changePageBtn').addEventListener('click', () => {
+    fetchSeries(document.getElementById('inputPageNumber').value);
+  });
+  document.getElementById('inputPageNumber').addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchSeries(e.target.value);
+  });
+
+  fetchSeries();
+</script>
+</body>
+</html>
