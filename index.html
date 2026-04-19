@@ -5,163 +5,172 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TMDB — Movies</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
   <style>
-    :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --surface2: #1a1a24;
-      --accent: #e8b84b;
-      --accent2: #c0392b;
-      --text: #f0eff4;
-      --muted: #7a7a8c;
-      --border: rgba(255,255,255,0.07);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
-
-    /* Navbar */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(10,10,15,0.92);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      display: flex; align-items: center; gap: 2rem; height: 64px;
-    }
-    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 2px; color: var(--accent); }
-    .nav-links { display: flex; gap: 1.5rem; }
-    .nav-links a {
-      color: var(--muted); text-decoration: none; font-size: 0.85rem;
-      font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
-      padding: 6px 0; border-bottom: 2px solid transparent;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .nav-links a.active, .nav-links a:hover { color: var(--text); border-color: var(--accent); }
-    .nav-search { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
-    .nav-search input {
-      background: var(--surface2); border: 1px solid var(--border);
-      color: var(--text); padding: 8px 14px; border-radius: 6px;
-      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; width: 200px;
-      transition: border-color 0.2s, width 0.3s;
-      outline: none;
-    }
-    .nav-search input:focus { border-color: var(--accent); width: 260px; }
-
-    /* Hero header */
     .page-header {
-      padding: 3rem 2rem 1.5rem;
-      display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
-      flex-wrap: wrap;
+      padding: 2.5rem 2rem 1.25rem;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap; max-width: 1440px; margin: 0 auto;
     }
-    .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 3px; line-height: 1; }
+    .page-title { font-family:'Bebas Neue',sans-serif; font-size:3rem; letter-spacing:3px; line-height:1; }
     .page-title span { color: var(--accent); }
-    .page-controls { display: flex; align-items: center; gap: 0.75rem; }
-    .page-controls input {
-      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-      padding: 9px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem; width: 90px; outline: none; transition: border-color 0.2s;
-    }
-    .page-controls input:focus { border-color: var(--accent); }
-    .btn {
-      background: var(--accent); color: #000; border: none;
-      padding: 9px 20px; border-radius: 6px; font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem; font-weight: 600; cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    .btn:hover { opacity: 0.88; }
-    .btn:active { transform: scale(0.97); }
+    .page-meta { font-size:.78rem; color:var(--muted); margin-top:.3rem; }
 
-    /* Grid */
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 1.25rem; padding: 1rem 2rem 3rem;
+    .sort-select {
+      background: var(--surface2); border: 1.5px solid var(--border);
+      color: var(--text); padding: 8px 30px 8px 13px;
+      border-radius: 8px; font-family:'DM Sans',sans-serif; font-size:.82rem;
+      outline: none; cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7a8c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      transition: border-color .2s;
+    }
+    .sort-select:focus { border-color: var(--accent); }
+
+    .grid-wrap { max-width: 1440px; margin: 0 auto; padding: 0 2rem; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(172px,1fr));
+      gap: 1.2rem; padding-bottom: 1rem;
     }
     .movie-card {
-      background: var(--surface); border-radius: 10px; overflow: hidden;
-      cursor: pointer; transition: transform 0.25s, box-shadow 0.25s;
-      border: 1px solid var(--border); text-decoration: none; color: inherit;
+      background: var(--surface); border-radius: var(--radius); overflow: hidden;
+      border: 1.5px solid var(--border); text-decoration: none; color: inherit;
       display: block; position: relative;
+      transition: transform .24s, box-shadow .24s, border-color .24s;
     }
-    .movie-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .movie-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.55); border-color: var(--border-hi); }
+    .card-img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--surface2); transition:filter .24s; }
     .movie-card:hover .card-img { filter: brightness(1.08); }
-    .card-img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; transition: filter 0.25s; }
     .card-badge {
-      position: absolute; top: 10px; right: 10px;
-      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
-      color: var(--accent); font-size: 0.75rem; font-weight: 600;
-      padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px;
+      position:absolute; top:9px; right:9px;
+      background:rgba(0,0,0,.76); backdrop-filter:blur(6px);
+      color:var(--accent); font-size:.72rem; font-weight:600;
+      padding:3px 8px; border-radius:4px; pointer-events:none;
     }
-    .card-body { padding: 0.75rem; }
-    .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
-    .card-meta { font-size: 0.75rem; color: var(--muted); }
+    .card-body { padding:.75rem; }
+    .card-title { font-size:.84rem; font-weight:600; line-height:1.3; margin-bottom:3px; }
+    .card-meta  { font-size:.74rem; color:var(--muted); }
 
-    /* Spinner */
-    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 8rem 0; }
-    .spinner {
-      width: 40px; height: 40px; border: 3px solid var(--surface2);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+    /* load more */
+    .load-more-wrap { text-align:center; padding:1.5rem 2rem 3rem; }
+    .load-more-btn {
+      background:var(--surface2); border:1.5px solid var(--border);
+      color:var(--text); padding:10px 28px; border-radius:8px;
+      font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600;
+      cursor:pointer; transition:all .2s;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .hidden { display: none !important; }
+    .load-more-btn:hover   { border-color:var(--accent); color:var(--accent); }
+    .load-more-btn:disabled{ opacity:.4; cursor:default; }
+    .page-pill { display:inline-block; font-size:.72rem; color:var(--muted); margin-top:.6rem; }
+
+    @media(max-width:500px){
+      .grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.75rem; }
+      .page-header { padding:1.5rem 1rem 1rem; }
+      .grid-wrap { padding:0 1rem; }
+    }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="logo">TMDB</div>
-    <div class="nav-links">
-      <a href="index.html" class="active">Movies</a>
-      <a href="series.html">TV Series</a>
-    </div>
-  </nav>
+<nav id="app-nav"></nav>
 
-  <div class="page-header">
+<div class="page-header">
+  <div>
     <div class="page-title">TRENDING <span>MOVIES</span></div>
-    <div class="page-controls">
-      <input type="number" min="1" value="1" id="inputPageNumber" placeholder="Page">
-      <button class="btn" id="changePageBtn">Go</button>
-    </div>
+    <div class="page-meta" id="page-meta"></div>
   </div>
+  <select class="sort-select" id="sort-select" aria-label="Sort by">
+    <option value="trending">🔥 Trending Today</option>
+    <option value="popular">📈 Most Popular</option>
+    <option value="top_rated">⭐ Top Rated</option>
+    <option value="now_playing">🎬 Now Playing</option>
+    <option value="upcoming">📅 Upcoming</option>
+  </select>
+</div>
 
-  <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
-  <div id="container" class="grid-container hidden"></div>
+<div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
+<div class="grid-wrap hidden" id="grid-wrap"><div class="grid" id="container"></div></div>
+<div class="load-more-wrap hidden" id="lm-wrap">
+  <button class="load-more-btn" id="lm-btn">Load More</button>
+  <div class="page-pill" id="page-pill"></div>
+</div>
 
+<script src="shared.js"></script>
 <script>
-  const spinnerContainer = document.getElementById('spinner-container');
-  const container = document.getElementById('container');
-  const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZTNkNmFkNGFlYTQ4YTA1NzQ1NzJiYTJmMTc0ZThiYyIsIm5iZiI6MTc3MTk0MDUxMy43NTUsInN1YiI6IjY5OWRhYWExYzIyNzIyMzlhZjZkMDJiZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hAN81nQsrSnKeNp7Ix4n8bcwi6lv5rSD1XM78nOqD6E";
-  const IMG = "https://image.tmdb.org/t/p/w500";
+  App.buildNav('movies');
 
-  async function fetchMovies(page = 1) {
-    spinnerContainer.classList.remove('hidden');
-    container.classList.add('hidden');
-    const res = await fetch(`https://api.themoviedb.org/3/trending/movie/day?language=en-US&page=${page}`, {
-      headers: { accept: "application/json", Authorization: `Bearer ${TOKEN}` }
-    });
-    const data = await res.json();
-    spinnerContainer.classList.add('hidden');
-    container.classList.remove('hidden');
-    container.innerHTML = data.results.map(m => `
-      <a href="details.html?movieId=${m.id}" class="movie-card">
-        <img class="card-img" src="${m.poster_path ? IMG + m.poster_path : ''}" alt="${m.title || 'Movie'}" loading="lazy">
-        <div class="card-badge">★ ${m.vote_average?.toFixed(1) || 'N/A'}</div>
-        <div class="card-body">
-          <div class="card-title">${m.title || m.original_title || 'No Title'}</div>
-          <div class="card-meta">${m.release_date?.slice(0,4) || '—'}</div>
-        </div>
-      </a>
-    `).join('');
+  const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZTNkNmFkNGFlYTQ4YTA1NzQ1NzJiYTJmMTc0ZThiYyIsIm5iZiI6MTc3MTk0MDUxMy43NTUsInN1YiI6IjY5OWRhYWExYzIyNzIyMzlhZjZkMDJiZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hAN81nQsrSnKeNp7Ix4n8bcwi6lv5rSD1XM78nOqD6E";
+  const IMG = 'https://image.tmdb.org/t/p/w500';
+  const URLS = {
+    trending:    p=>`https://api.themoviedb.org/3/trending/movie/day?language=en-US&page=${p}`,
+    popular:     p=>`https://api.themoviedb.org/3/movie/popular?language=en-US&page=${p}`,
+    top_rated:   p=>`https://api.themoviedb.org/3/movie/top_rated?language=en-US&page=${p}`,
+    now_playing: p=>`https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=${p}`,
+    upcoming:    p=>`https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=${p}`,
+  };
+
+  const spinner  = document.getElementById('spinner-container');
+  const gridWrap = document.getElementById('grid-wrap');
+  const container= document.getElementById('container');
+  const lmWrap   = document.getElementById('lm-wrap');
+  const lmBtn    = document.getElementById('lm-btn');
+  const pagePill = document.getElementById('page-pill');
+  const pageMeta = document.getElementById('page-meta');
+  let page=1, totalPages=1, sort='trending', loading=false;
+
+  function makeCard(m) {
+    const a = document.createElement('a');
+    a.href = `details.html?movieId=${m.id}`;
+    a.className = 'movie-card';
+    a.setAttribute('aria-label', m.title || 'Movie');
+    a.innerHTML = `
+      <img class="card-img" src="${m.poster_path?IMG+m.poster_path:''}" alt="${m.title||''}" loading="lazy">
+      <div class="card-badge">★ ${m.vote_average?.toFixed(1)||'N/A'}</div>
+      <div class="card-body">
+        <div class="card-title">${m.title||m.original_title||'No Title'}</div>
+        <div class="card-meta">${m.release_date?.slice(0,4)||'—'}</div>
+      </div>`;
+    App.injectCardActions(a, m.id, 'movie', () => m.title||'');
+    return a;
   }
 
-  document.getElementById('changePageBtn').addEventListener('click', () => {
-    fetchMovies(document.getElementById('inputPageNumber').value);
-  });
-  document.getElementById('inputPageNumber').addEventListener('keydown', e => {
-    if (e.key === 'Enter') fetchMovies(e.target.value);
+  async function load(p=1, append=false) {
+    if (loading) return; loading=true; lmBtn.disabled=true;
+    if (!append) {
+      spinner.classList.remove('hidden');
+      gridWrap.classList.add('hidden');
+      lmWrap.classList.add('hidden');
+      container.innerHTML='';
+    }
+    try {
+      const res  = await fetch(URLS[sort](p), { headers:{ accept:'application/json', Authorization:`Bearer ${TOKEN}` } });
+      const data = await res.json();
+      totalPages = Math.min(data.total_pages||1, 500);
+      page = p;
+      spinner.classList.add('hidden');
+      gridWrap.classList.remove('hidden');
+      (data.results||[]).forEach(m => container.appendChild(makeCard(m)));
+      pageMeta.textContent = `Page ${page} of ${totalPages}`;
+      pagePill.textContent = `Page ${page} / ${totalPages}`;
+      lmWrap.classList.toggle('hidden', page >= totalPages);
+    } catch {
+      spinner.classList.add('hidden');
+      gridWrap.classList.remove('hidden');
+      container.innerHTML = '<p class="error-msg" style="grid-column:1/-1">Failed to load. Please try again.</p>';
+    }
+    loading=false; lmBtn.disabled=false;
+  }
+
+  lmBtn.addEventListener('click', () => load(page+1, true));
+  document.getElementById('sort-select').addEventListener('change', e => {
+    sort = e.target.value;
+    document.querySelector('.page-title').innerHTML = {
+      trending:'TRENDING <span>MOVIES</span>', popular:'POPULAR <span>MOVIES</span>',
+      top_rated:'TOP <span>RATED</span>', now_playing:'NOW <span>PLAYING</span>', upcoming:'UPCOMING <span>MOVIES</span>'
+    }[sort] || 'TRENDING <span>MOVIES</span>';
+    load(1, false);
   });
 
-  fetchMovies();
+  load();
 </script>
 </body>
 </html>

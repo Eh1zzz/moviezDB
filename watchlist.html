@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Lists — TMDB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .lists-page { max-width:1440px; margin:0 auto; padding:2.5rem 2rem 4rem; }
+
+    .list-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:2rem; }
+    .l-tab {
+      padding:.7rem 1.4rem; font-size:.85rem; font-weight:600;
+      color:var(--muted); cursor:pointer; border-bottom:2px solid transparent;
+      margin-bottom:-1px; transition:color .2s, border-color .2s;
+      background:none; font-family:'DM Sans',sans-serif;
+    }
+    .l-tab:hover  { color:var(--text); }
+    .l-tab.active { color:var(--text); border-bottom-color:var(--accent); }
+    .l-tab-count {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:18px; height:18px; border-radius:50%; font-size:.6rem;
+      background:var(--surface2); margin-left:5px;
+    }
+    .l-tab.active .l-tab-count { background:var(--accent); color:#000; }
+
+    .list-panel { display:none; }
+    .list-panel.active { display:block; }
+
+    .panel-header {
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:1.5rem; flex-wrap:wrap; gap:.75rem;
+    }
+    .panel-title { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:2px; }
+    .panel-title em { color:var(--accent); font-style:normal; }
+    .clear-btn {
+      background:none; border:1.5px solid var(--border); color:var(--red);
+      padding:6px 14px; border-radius:6px; font-family:'DM Sans',sans-serif;
+      font-size:.76rem; cursor:pointer; transition:all .2s;
+    }
+    .clear-btn:hover { background:rgba(224,82,82,.08); border-color:var(--red); }
+
+    .items-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1.2rem; }
+
+    .item-card {
+      background:var(--surface); border-radius:var(--radius); overflow:hidden;
+      border:1.5px solid var(--border); position:relative;
+      transition:transform .22s, box-shadow .22s;
+    }
+    .item-card:hover { transform:translateY(-5px); box-shadow:0 16px 36px rgba(0,0,0,.5); }
+    .item-card a { display:block; }
+    .item-card img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--surface2); }
+    .item-type-badge {
+      position:absolute; top:8px; right:8px;
+      background:rgba(0,0,0,.78); backdrop-filter:blur(6px);
+      font-size:.65rem; font-weight:700; padding:2px 7px; border-radius:4px;
+    }
+    .item-type-badge.movie { color:var(--accent); }
+    .item-type-badge.tv    { color:#5b8af5; }
+    .item-remove {
+      position:absolute; top:8px; left:8px;
+      width:26px; height:26px; border-radius:50%;
+      background:rgba(224,82,82,.8); border:none; color:#fff;
+      font-size:.95rem; display:none; align-items:center; justify-content:center;
+      cursor:pointer; transition:background .2s;
+    }
+    .item-card:hover .item-remove { display:flex; }
+    .item-remove:hover { background:var(--red); }
+    .item-body { padding:.7rem; }
+    .item-title { font-size:.82rem; font-weight:600; line-height:1.3; margin-bottom:2px; }
+    .item-sub   { font-size:.7rem; color:var(--muted); }
+
+    .empty-state { text-align:center; padding:5rem 2rem; color:var(--muted); }
+    .empty-state .es-icon { font-size:3rem; display:block; margin-bottom:1rem; }
+    .empty-state h3 { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--text); margin-bottom:.5rem; letter-spacing:2px; }
+    .empty-state p  { font-size:.88rem; margin-bottom:1.5rem; }
+    .empty-state a  {
+      display:inline-block; color:var(--accent); border:1.5px solid var(--border-hi);
+      padding:8px 20px; border-radius:8px; font-size:.85rem; font-weight:600;
+      transition:background .2s;
+    }
+    .empty-state a:hover { background:rgba(232,184,75,.08); }
+
+    @media(max-width:500px){ .items-grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:.75rem;} }
+  </style>
+</head>
+<body>
+<nav id="app-nav"></nav>
+
+<div class="lists-page">
+  <div class="list-tabs">
+    <button class="l-tab active" data-panel="watchlist">
+      Watchlist <span class="l-tab-count" id="wl-count">0</span>
+    </button>
+    <button class="l-tab" data-panel="favorites">
+      Favourites <span class="l-tab-count" id="fv-count">0</span>
+    </button>
+  </div>
+
+  <!-- Watchlist panel -->
+  <div class="list-panel active" id="panel-watchlist">
+    <div class="panel-header">
+      <h2 class="panel-title">MY <em>WATCHLIST</em></h2>
+      <button class="clear-btn" id="clear-wl">Clear All</button>
+    </div>
+    <div class="items-grid" id="wl-grid"></div>
+  </div>
+
+  <!-- Favourites panel -->
+  <div class="list-panel" id="panel-favorites">
+    <div class="panel-header">
+      <h2 class="panel-title">MY <em>FAVOURITES</em></h2>
+      <button class="clear-btn" id="clear-fv">Clear All</button>
+    </div>
+    <div class="items-grid" id="fv-grid"></div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+  App.buildNav('');
+  const Store = App.Store;
+  const Toast = App.Toast;
+
+  // Hash routing: #favorites
+  if (window.location.hash === '#favorites') {
+    document.querySelector('[data-panel="watchlist"]').classList.remove('active');
+    document.querySelector('[data-panel="favorites"]').classList.add('active');
+    document.getElementById('panel-watchlist').classList.remove('active');
+    document.getElementById('panel-favorites').classList.add('active');
+  }
+
+  function renderGrid(items, gridId, listKey) {
+    const grid = document.getElementById(gridId);
+    const isWl = listKey === 'watchlist';
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <span class="es-icon">${isWl?'🔖':'♥'}</span>
+        <h3>Nothing Here Yet</h3>
+        <p>${isWl?'Save movies and TV shows to keep track of what you want to watch.':'Heart content you love to save it here.'}</p>
+        <a href="index.html">Browse Movies →</a>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = '';
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      const href  = item.type==='movie' ? `details.html?movieId=${item.id}` : `details.html?seriesId=${item.id}`;
+      const label = item.type==='movie' ? 'Movie' : 'TV';
+      card.innerHTML = `
+        <a href="${href}">
+          <img src="${item.poster||''}" alt="${item.title||''}" loading="lazy"
+            onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.title||'?')}&background=1a1a24&color=7a7a8c&size=300'">
+          <div class="item-type-badge ${item.type}">${label}</div>
+        </a>
+        <button class="item-remove" title="Remove" aria-label="Remove ${item.title||''}">×</button>
+        <div class="item-body">
+          <div class="item-title">${item.title||'Untitled'}</div>
+          <div class="item-sub">${label}</div>
+        </div>`;
+
+      card.querySelector('.item-remove').addEventListener('click', e => {
+        e.preventDefault();
+        if (listKey==='watchlist') Store.toggleWatchlist({ id:item.id, type:item.type });
+        else Store.toggleFavorite({ id:item.id, type:item.type });
+        Toast.show(`Removed from ${isWl?'Watchlist':'Favourites'}`, '🗑️');
+        refreshAll();
+        App.Profile.refresh();
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  function refreshAll() {
+    const wl = Store.getWatchlist();
+    const fv = Store.getFavorites();
+    document.getElementById('wl-count').textContent = wl.length;
+    document.getElementById('fv-count').textContent = fv.length;
+    renderGrid(wl, 'wl-grid', 'watchlist');
+    renderGrid(fv, 'fv-grid', 'favorites');
+  }
+
+  // Tab switching
+  document.querySelectorAll('.l-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.l-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.list-panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(`panel-${tab.dataset.panel}`).classList.add('active');
+      history.replaceState(null,'', tab.dataset.panel==='favorites'?'#favorites':'#');
+    });
+  });
+
+  document.getElementById('clear-wl').addEventListener('click', () => {
+    if (!confirm('Clear your entire watchlist?')) return;
+    Store.clearWatchlist(); refreshAll(); App.Profile.refresh();
+    Toast.show('Watchlist cleared','🗑️');
+  });
+  document.getElementById('clear-fv').addEventListener('click', () => {
+    if (!confirm('Clear all your favourites?')) return;
+    Store.clearFavorites(); refreshAll(); App.Profile.refresh();
+    Toast.show('Favourites cleared','🗑️');
+  });
+
+  refreshAll();
+</script>
+</body>
+</html>
