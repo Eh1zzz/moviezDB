@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Person — MoviezDB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .profile-hero { max-width:1100px; margin:0 auto; padding:3rem 2rem 2rem; display:flex; gap:3rem; align-items:flex-start; }
+    .profile-poster { width:220px; min-width:220px; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.6); border:1px solid var(--border); object-fit:cover; aspect-ratio:2/3; }
+    .profile-info { flex:1; }
+    .profile-name { font-family:'Bebas Neue',sans-serif; font-size:3.2rem; letter-spacing:2px; line-height:1.05; margin-bottom:1.25rem; }
+    .stats-row { display:flex; flex-wrap:wrap; gap:1.5rem; margin-bottom:1.75rem; }
+    .stat { display:flex; flex-direction:column; gap:2px; }
+    .stat-label { font-size:.68rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+    .stat-value { font-size:.94rem; font-weight:600; }
+    .stat-value.gold { color:var(--accent); }
+    .bio-label { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:1.5px; color:var(--muted); margin-bottom:.6rem; }
+    .bio-text { font-size:.88rem; line-height:1.8; color:#b8b8cc; max-height:160px; overflow:hidden; position:relative; transition:max-height .4s ease; }
+    .bio-text.expanded { max-height:2000px; }
+    .bio-text::after { content:''; position:absolute; bottom:0; left:0; right:0; height:50px; background:linear-gradient(transparent,var(--bg)); pointer-events:none; transition:opacity .3s; }
+    .bio-text.expanded::after { opacity:0; }
+    .bio-toggle { background:none; border:none; color:var(--accent); font-family:'DM Sans',sans-serif; font-size:.82rem; cursor:pointer; padding:6px 0; margin-top:4px; }
+    .bio-toggle:hover { text-decoration:underline; }
+    .main { max-width:1100px; margin:0 auto; padding:1rem 2rem 3rem; }
+    .section { margin-bottom:2.5rem; }
+    .section-title { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:2px; margin-bottom:1.25rem; display:flex; align-items:center; gap:.75rem; }
+    .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+    .section-count { font-family:'DM Sans',sans-serif; font-size:.75rem; font-weight:500; color:var(--muted); }
+    .movie-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:1rem; }
+    .movie-card { background:var(--surface); border-radius:var(--radius); overflow:hidden; border:1.5px solid var(--border); text-decoration:none; color:inherit; transition:transform .22s,box-shadow .22s,border-color .22s; display:block; position:relative; }
+    .movie-card:hover { transform:translateY(-5px); box-shadow:0 16px 36px rgba(0,0,0,.5); border-color:var(--border-hi); }
+    .movie-card img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--surface2); }
+    .card-badge { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.78); backdrop-filter:blur(6px); color:var(--accent); font-size:.7rem; font-weight:600; padding:2px 7px; border-radius:4px; pointer-events:none; }
+    .card-body { padding:.65rem; }
+    .card-title { font-size:.79rem; font-weight:600; line-height:1.3; margin-bottom:3px; }
+    .card-role { font-size:.7rem; color:var(--muted); }
+    .extra-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:1rem; margin-top:1rem; }
+    .toggle-btn { background:none; border:1px solid var(--border); color:var(--accent); padding:8px 18px; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:.8rem; cursor:pointer; margin-top:1rem; transition:border-color .2s,background .2s; }
+    .toggle-btn:hover { background:rgba(232,184,75,.08); border-color:var(--accent); }
+    .empty-msg { color:var(--muted); text-align:center; padding:2rem; font-size:.9rem; }
+    @media(max-width:640px){ .profile-hero{flex-direction:column;padding:1.5rem;} .profile-poster{width:160px;min-width:160px;} .profile-name{font-size:2.2rem;} .main{padding:1rem 1.25rem 3rem;} }
+  </style>
+</head>
+<body>
+<nav id="app-nav"></nav>
+<div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
+<div id="main-content" class="hidden"></div>
+
+<script src="shared.js"></script>
+<script>
+  App.buildNav('');
+  document.documentElement.lang = App.Lang.current();
+  const API_KEY  = '6e3d6ad4aea48a0574572ba2f174e8bc';
+  const IMG      = 'https://image.tmdb.org/t/p/w500';
+  const spinner  = document.getElementById('spinner-container');
+  const mc       = document.getElementById('main-content');
+  const params   = new URLSearchParams(window.location.search);
+  const personId = params.get('personId');
+
+  function avatar(n){ return `https://ui-avatars.com/api/?name=${encodeURIComponent(n)}&background=1a1a24&color=7a7a8c&size=400`; }
+
+  function cardHtml(c, role) {
+    const img  = c.poster_path ? `${IMG}${c.poster_path}` : '';
+    const t    = c.title||c.name||'Untitled';
+    const yr   = (c.release_date||c.first_air_date||'').slice(0,4);
+    const rat  = c.vote_average ? c.vote_average.toFixed(1) : null;
+    const href = c.media_type==='tv' ? `details.html?seriesId=${c.id}` : `details.html?movieId=${c.id}`;
+    return `<a href="${href}" class="movie-card">
+      ${img?`<img src="${img}" alt="${t}" loading="lazy">`:`<div style="aspect-ratio:2/3;background:var(--surface2)"></div>`}
+      ${rat?`<div class="card-badge">★ ${rat}</div>`:''}
+      <div class="card-body">
+        <div class="card-title">${t}${yr?` <span style="color:var(--muted);font-weight:400">(${yr})</span>`:''}</div>
+        <div class="card-role">${role}</div>
+      </div></a>`;
+  }
+
+  function section(id, title, list, roleKey, n=8) {
+    if (!list.length) return '';
+    const init=list.slice(0,n), extra=list.slice(n);
+    return `<div class="section">
+      <div class="section-title">${title} <span class="section-count">${list.length}</span></div>
+      <div class="movie-grid">${init.map(c=>cardHtml(c,c[roleKey]||'—')).join('')}</div>
+      ${extra.length?`<div id="extra-${id}" class="extra-grid hidden">${extra.map(c=>cardHtml(c,c[roleKey]||'—')).join('')}</div>
+        <button class="toggle-btn" data-target="${id}">Show more</button>`:''}
+    </div>`;
+  }
+
+  if (!personId) {
+    spinner.classList.add('hidden'); mc.classList.remove('hidden');
+    mc.innerHTML='<p class="error-msg">Error: No person ID provided.</p>';
+  } else {
+    fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${API_KEY}&language=${App.Lang.getApiParam()}&append_to_response=combined_credits`,
+      {headers:{accept:'application/json'}})
+    .then(r=>r.json()).then(person=>{
+      spinner.classList.add('hidden'); mc.classList.remove('hidden');
+      const name  = person.name||'Unknown Person';
+      const photo = person.profile_path ? `${IMG}${person.profile_path}` : avatar(name);
+      document.title = `${name} — TMDB`;
+
+      const castCredits = Object.values(
+        (person.combined_credits?.cast||[]).reduce((acc,c)=>{
+          if (!acc[c.id]||(c.vote_count>(acc[c.id].vote_count||0))) acc[c.id]=c; return acc;
+        },{})
+      ).sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+
+      const crewCredits = Object.values(
+        (person.combined_credits?.crew||[]).reduce((acc,c)=>{
+          if (!acc[`${c.id}-${c.job}`]) acc[`${c.id}-${c.job}`]=c; return acc;
+        },{})
+      ).sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+
+      const age = person.birthday ? (()=>{
+        const birth=new Date(person.birthday);
+        const end  =person.deathday?new Date(person.deathday):new Date();
+        return Math.floor((end-birth)/(365.25*24*60*60*1000));
+      })() : null;
+
+      const bio = person.biography||'';
+      const castSec = section('cast','Acting',castCredits,'character');
+      const crewSec = section('crew','Crew',crewCredits,'job');
+
+      mc.innerHTML = `
+        <div class="profile-hero">
+          <img class="profile-poster" src="${photo}" alt="${name}">
+          <div class="profile-info">
+            <h1 class="profile-name">${name}</h1>
+            <div class="stats-row">
+              ${person.known_for_department?`<div class="stat"><span class="stat-label">Known For</span><span class="stat-value gold">${person.known_for_department}</span></div>`:''}
+              ${person.birthday?`<div class="stat"><span class="stat-label">Born</span><span class="stat-value">${person.birthday}</span></div>`:''}
+              ${age!==null?`<div class="stat"><span class="stat-label">${person.deathday?'Age at Death':'Age'}</span><span class="stat-value">${age}</span></div>`:''}
+              ${person.deathday?`<div class="stat"><span class="stat-label">Died</span><span class="stat-value">${person.deathday}</span></div>`:''}
+              ${person.place_of_birth?`<div class="stat"><span class="stat-label">Birthplace</span><span class="stat-value">${person.place_of_birth}</span></div>`:''}
+              ${person.popularity?`<div class="stat"><span class="stat-label">Popularity</span><span class="stat-value">${Math.round(person.popularity)}</span></div>`:''}
+            </div>
+            ${bio?`<div class="bio-label">Biography</div>
+              <div class="bio-text" id="bio-text">${bio.replace(/\n\n/g,'<br><br>')}</div>
+              <button class="bio-toggle" id="bio-toggle">Read more</button>`
+              :`<div class="bio-label">Biography</div><p style="color:var(--muted);font-size:.88rem">No biography available.</p>`}
+          </div>
+        </div>
+        <div class="main">
+          ${castSec||crewSec ? castSec+crewSec : '<p class="empty-msg">No filmography available.</p>'}
+        </div>`;
+
+      const bioText  = document.getElementById('bio-text');
+      const bioToggle= document.getElementById('bio-toggle');
+      if (bioText && bioToggle) {
+        if (bioText.scrollHeight <= bioText.clientHeight+10) {
+          bioToggle.style.display='none'; bioText.classList.add('expanded');
+        }
+        bioToggle.addEventListener('click',()=>{
+          const exp=bioText.classList.toggle('expanded');
+          bioToggle.textContent=exp?'Read less':'Read more';
+        });
+      }
+      document.querySelectorAll('.toggle-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const el=document.getElementById(`extra-${btn.dataset.target}`);
+          btn.textContent=el.classList.toggle('hidden')?'Show more':'Show less';
+        });
+      });
+    }).catch(err=>{
+      spinner.classList.add('hidden'); mc.classList.remove('hidden');
+      mc.innerHTML='<p class="error-msg">Failed to load person details.</p>';
+      console.error(err);
+    });
+  }
+</script>
+</body>
+</html>
