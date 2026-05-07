@@ -5,6 +5,12 @@
    ========================================= */
 'use strict';
 
+/* Apply theme IMMEDIATELY before DOM render to avoid flash */
+(function() {
+  const saved = localStorage.getItem('tmdb_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
 (function () {
 
   const API_KEY = '6e3d6ad4aea48a0574572ba2f174e8bc';
@@ -298,13 +304,37 @@
     document.addEventListener('keydown', e => e.key === 'Escape' && close());
   }
 
+  /* ── THEME ────────────────────────────── */
+  const Theme = {
+    current() {
+      return document.documentElement.getAttribute('data-theme') || 'dark';
+    },
+    toggle() {
+      const next = this.current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('tmdb_theme', next);
+      // Update all toggle buttons in the page (there may be one in nav)
+      document.querySelectorAll('.theme-toggle').forEach(btn => {
+        btn.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        btn.setAttribute('title',      next === 'dark' ? 'Light mode' : 'Dark mode');
+      });
+      Toast.show(next === 'light' ? 'Light mode' : 'Dark mode', next === 'light' ? '☀️' : '🌙', 1800);
+    },
+    init() {
+      // Delegate — works for buttons injected after this call
+      document.addEventListener('click', e => {
+        if (e.target.closest('.theme-toggle')) this.toggle();
+      });
+    },
+  };
+
   /* ── NAV BUILDER ──────────────────────── */
   function buildNav(activePage) {
     const nav = document.getElementById('app-nav');
     if (!nav) return;
 
     nav.innerHTML = `
-      <a href="index.html" class="nav-logo" aria-label="TMDB Home">TMDB</a>
+      <a href="index.html" class="nav-logo" aria-label="MoviezDB Home">MoviezDB</a>
 
       <div class="nav-links" id="nav-links" role="navigation" aria-label="Main">
         <a href="index.html"  class="${activePage==='movies' ?'nav-active':''}">Movies</a>
@@ -327,8 +357,30 @@
         <div class="search-dropdown" role="listbox" aria-label="Search results"></div>
       </div>
 
-      <!-- Profile -->
+      <!-- Theme toggle + Profile -->
       <div class="nav-actions">
+        <!-- Theme toggle -->
+        <button class="theme-toggle"
+                aria-label="${Theme.current() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}"
+                title="${Theme.current() === 'dark' ? 'Light mode' : 'Dark mode'}">
+          <!-- Moon (shown in dark mode) -->
+          <svg class="tt-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <!-- Sun (shown in light mode) -->
+          <svg class="tt-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1"  x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22"   x2="5.64"  y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1"  y1="12" x2="3"  y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36"/>
+            <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+
         <div style="position:relative">
           <button class="profile-btn" id="profile-btn" aria-haspopup="true" aria-label="Profile menu">
             <div class="profile-avatar" aria-hidden="true">MF</div>
@@ -400,6 +452,7 @@
       document.getElementById('nav-links'),
       document.getElementById('nav-overlay')
     );
+    Theme.init();
 
     // Smooth-scroll same-page links
     document.querySelectorAll('a[href^="#"]').forEach(a => {
@@ -411,6 +464,6 @@
   }
 
   /* ── EXPOSE ───────────────────────────── */
-  window.App = { buildNav, Store, Toast, Profile, injectCardActions };
+  window.App = { buildNav, Store, Toast, Profile, Theme, injectCardActions };
 
 })();

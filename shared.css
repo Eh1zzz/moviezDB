@@ -20,6 +20,24 @@
   --red:      #e05252;
   --radius:   10px;
   --nav-h:    64px;
+
+  /* Theme transition speed */
+  --theme-speed: 0.22s;
+}
+
+/* ── LIGHT MODE TOKENS ───────────────────── */
+[data-theme="light"] {
+  --bg:       #f5f3ee;
+  --surface:  #ffffff;
+  --surface2: #ede9e1;
+  --surface3: #e0dbd0;
+  --accent:   #c8960a;
+  --text:     #1a1714;
+  --muted:    #7a7060;
+  --border:   rgba(0,0,0,0.09);
+  --border-hi:rgba(200,150,10,0.35);
+  --green:    #2e7d32;
+  --red:      #c62828;
 }
 
 /* ── BASE RESET ──────────────────────────── */
@@ -29,6 +47,7 @@ body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg); color: var(--text);
   min-height: 100vh; overflow-x: hidden;
+  transition: background var(--theme-speed), color var(--theme-speed);
 }
 a { text-decoration: none; color: inherit; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; }
@@ -45,7 +64,40 @@ img { display: block; }
   display: flex; align-items: center;
   padding: 0 clamp(1rem,3vw,2rem);
   gap: 1rem;
+  transition: background var(--theme-speed), border-color var(--theme-speed);
 }
+[data-theme="light"] #app-nav {
+  background: rgba(245,243,238,0.93);
+}
+
+/* ── THEME TOGGLE ────────────────────────── */
+.theme-toggle {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  color: var(--muted); flex-shrink: 0;
+  transition: background var(--theme-speed), border-color var(--theme-speed),
+              color var(--theme-speed), transform .3s;
+  position: relative; overflow: hidden;
+}
+.theme-toggle:hover {
+  border-color: var(--border-hi); color: var(--accent);
+  transform: rotate(15deg);
+}
+.theme-toggle:active { transform: rotate(15deg) scale(.9); }
+
+/* Icon swap — two icons stacked, one visible at a time */
+.theme-toggle .tt-moon,
+.theme-toggle .tt-sun {
+  position: absolute; width: 16px; height: 16px;
+  transition: opacity .22s ease, transform .3s ease;
+}
+/* Dark mode: show moon, hide sun */
+.theme-toggle .tt-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+.theme-toggle .tt-sun  { opacity: 0; transform: rotate(90deg) scale(.5); }
+/* Light mode: show sun, hide moon */
+[data-theme="light"] .theme-toggle .tt-moon { opacity: 0; transform: rotate(-90deg) scale(.5); }
+[data-theme="light"] .theme-toggle .tt-sun  { opacity: 1; transform: rotate(0deg) scale(1); }
 
 /* Logo */
 .nav-logo {
@@ -76,7 +128,8 @@ img { display: block; }
   display: flex; align-items: center;
   background: var(--surface2); border: 1.5px solid var(--border);
   border-radius: 8px; overflow: hidden;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .2s, box-shadow .2s,
+              background var(--theme-speed);
 }
 .nav-search-box:focus-within {
   border-color: var(--accent);
@@ -114,6 +167,7 @@ img { display: block; }
   box-shadow: 0 24px 64px rgba(0,0,0,.65);
   display: none; overflow: hidden;
   max-height: 480px; overflow-y: auto;
+  transition: background var(--theme-speed), border-color var(--theme-speed);
 }
 .search-dropdown.open { display: block; }
 .search-dropdown::-webkit-scrollbar { width: 4px; }
@@ -170,7 +224,7 @@ img { display: block; }
   background: var(--surface2); border: 1.5px solid var(--border);
   color: var(--text); font-size: .82rem; font-weight: 500;
   cursor: pointer; position: relative;
-  transition: border-color .2s, background .2s;
+  transition: border-color .2s, background .2s, color var(--theme-speed);
 }
 .profile-btn:hover { border-color: var(--border-hi); background: var(--surface3); }
 .profile-btn.open  { border-color: var(--accent); }
@@ -192,6 +246,7 @@ img { display: block; }
   border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: 0 24px 64px rgba(0,0,0,.65);
   z-index: 500; display: none; overflow: hidden;
+  transition: background var(--theme-speed), border-color var(--theme-speed);
 }
 .profile-dropdown.open { display: block; }
 
@@ -318,6 +373,7 @@ img { display: block; }
   box-shadow: 0 8px 32px rgba(0,0,0,.45);
   pointer-events: auto; max-width: 290px;
   animation: toastIn .28s ease;
+  transition: background var(--theme-speed), color var(--theme-speed), border-color var(--theme-speed);
 }
 .toast.out { animation: toastOut .28s ease forwards; }
 @keyframes toastIn  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
