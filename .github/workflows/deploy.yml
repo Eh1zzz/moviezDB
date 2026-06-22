@@ -1,0 +1,50 @@
+name: Deploy to GitHub Pages
+
+# Publishes the static frontend/ to GitHub Pages on every push to main.
+# The TMDB key is injected at build time from the repo secret `TMDB_KEY`,
+# so it works live but is never committed to the repo.
+#
+# One-time setup:
+#   1. Repo → Settings → Secrets and variables → Actions → New repository secret
+#        Name:  TMDB_KEY      Value: <your TMDB v3 API key>
+#   2. Repo → Settings → Pages → Build and deployment → Source: GitHub Actions
+#   Then push (or hit "Run workflow"). Your site: https://<user>.github.io/<repo>/
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate config.js from secret
+        run: |
+          cat > frontend/config.js <<EOF
+          window.MOVIEZDB_CONFIG = {
+            TMDB_KEY: '${{ secrets.TMDB_KEY }}',
+            DEFAULT_LANG: 'en',
+          };
+          EOF
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend
+      - id: deployment
+        uses: actions/deploy-pages@v4
