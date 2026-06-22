@@ -88,12 +88,13 @@
   <div class="page-pill" id="page-pill"></div>
 </div>
 
+<script src="config.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('series');
   document.documentElement.lang = App.Lang.current();
 
-  const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZTNkNmFkNGFlYTQ4YTA1NzQ1NzJiYTJmMTc0ZThiYyIsIm5iZiI6MTc3MTk0MDUxMy43NTUsInN1YiI6IjY5OWRhYWExYzIyNzIyMzlhZjZkMDJiZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hAN81nQsrSnKeNp7Ix4n8bcwi6lv5rSD1XM78nOqD6E";
+  const API_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG = 'https://image.tmdb.org/t/p/w500';
   const lang = () => App.Lang.getApiParam();
   const URLS = {
@@ -130,7 +131,7 @@
     if (loading) return; loading=true; lmBtn.disabled=true;
     if (!append) { spinner.classList.remove('hidden'); gridWrap.classList.add('hidden'); lmWrap.classList.add('hidden'); container.innerHTML=''; }
     try {
-      const res=await fetch(URLS[sort](p),{headers:{accept:'application/json',Authorization:`Bearer ${TOKEN}`}});
+      const res=await fetch(URLS[sort](p)+`&api_key=${API_KEY}`,{headers:{accept:'application/json'}});
       const data=await res.json();
       totalPages=Math.min(data.total_pages||1,500); page=p;
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');

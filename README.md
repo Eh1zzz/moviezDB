@@ -1,215 +1,105 @@
 # MoviezDB
 
-A full-stack movie & TV discovery app powered by TMDB, with streaming and download
-capabilities via the **moviebox-api** Python CLI bridged through a Node.js backend.
+A fast, **fully static** movie & TV discovery app powered by [TMDB](https://www.themoviedb.org/).
+Browse trending movies & series, search across movies/TV/people, view rich detail
+pages, **play official trailers**, see **where to watch** (legal streaming
+providers via JustWatch), and keep a personal **watchlist & favourites** — all in
+the browser, no server required.
 
 ---
 
-## Project Structure
+## ✨ Features
 
-```
-MoviezDB/
-├── frontend/               ← Static HTML/CSS/JS (open in browser or serve statically)
-│   ├── index.html          — Trending Movies
-│   ├── series.html         — TV Series
-│   ├── details.html        — Movie / Series detail + Watch Now
-│   ├── genre.html          — Browse by genre
-│   ├── person.html         — Actor / crew profile
-│   ├── search.html         — Full search results
-│   ├── watchlist.html      — Saved watchlist & favourites
-│   ├── shared.css          — Design system (dark + light theme, all components)
-│   ├── shared.js           — Shared modules: Nav, Search, Profile, Theme,
-│   │                         Language switcher, Stream player, Toasts
-│   ├── favicon.svg         — Brand favicon (film reel + play icon)
-│   └── assets/             — Fallback thumbnails
-│
-└── backend/                ← Node.js + Express API server
-    ├── server.js           — Main server: stream resolve + proxy endpoints
-    ├── package.json
-    └── .env.example        — Environment variable template
-```
-
----
-
-## Prerequisites
-
-| Tool | Version | Install |
-|------|---------|---------|
-| Node.js | ≥ 18 | https://nodejs.org |
-| Python | ≥ 3.9 | https://python.org |
-| moviebox-api | latest | `pip install "moviebox-api[cli]"` |
-
----
-
-## Setup
-
-### 1 — Install moviebox-api (Python)
-
-```bash
-pip install "moviebox-api[cli]"
-
-# Verify the CLI is available:
-moviebox --version
-# or: python -m moviebox_api --version
-```
-
-### 2 — Install backend dependencies
-
-```bash
-cd backend
-npm install
-```
-
-### 3 — Configure environment
-
-```bash
-cp .env.example .env
-# Edit .env if you need to change PORT or ALLOWED_ORIGINS
-```
-
-### 4 — Start the backend
-
-```bash
-# Production:
-npm start          # runs on http://localhost:3001
-
-# Development (auto-restarts on change):
-npm run dev
-```
-
-### 5 — Open the frontend
-
-Use any static file server pointed at the `frontend/` folder:
-
-```bash
-# VS Code: Install "Live Server" extension → right-click index.html → Open with Live Server
-# or:
-npx serve frontend   # serves on http://localhost:3000
-# or:
-python -m http.server 5500 --directory frontend
-```
-
-> **Important:** The frontend's `App.Stream` module sends requests to
-> `http://localhost:3001` by default. To change this, set
-> `window.MOVIEZDB_BACKEND = 'https://your-backend.com'` before `shared.js` loads,
-> or edit the `BACKEND_URL` constant at the top of `shared.js`.
-
----
-
-## Features
-
-### Frontend
 | Feature | Description |
 |---------|-------------|
-| **Dark / Light mode** | Smooth animated toggle, persisted in `localStorage` |
-| **Language switcher** | 12 languages — English, French, Spanish, German, Portuguese, Italian, Japanese, Korean, Chinese, Arabic, Hindi, Russian. Changes TMDB API content language site-wide. |
-| **Search** | Live multi-type search (movies + TV + people) with keyboard navigation (`⌘K` / `/`). Full results page with type filter tabs. |
-| **Profile card** | Display name (editable), watchlist & favourites counters, quick links |
-| **Watchlist / Favourites** | Persisted in `localStorage`. ♥ and 🔖 buttons on every card. Dedicated management page. |
-| **Watch Now** | Stream any movie or TV episode directly in-browser via the backend |
-| **Episode picker** | Season + episode dropdowns appear for TV series |
-| **Similar content** | "More Like This" horizontal scroll row on every details page |
-| **Favicon** | SVG film-reel icon in brand gold |
-| **Responsive** | Mobile hamburger menu, adaptive grids, touch-friendly |
-
-### Backend API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Uptime check → `{ status: "ok" }` |
-| `/api/stream/resolve` | POST | Resolve a stream URL via moviebox CLI |
-| `/api/stream/proxy` | GET | Byte-range proxy for CORS-locked CDN URLs |
-
-#### `POST /api/stream/resolve`
-
-**Request body:**
-```json
-{
-  "type":    "movie",        // "movie" or "tv"
-  "title":   "Inception",   // title as it would appear in MovieBox
-  "season":  1,             // TV only
-  "episode": 1,             // TV only
-  "quality": "1080p"        // "480p" | "720p" | "1080p"
-}
-```
-
-**Success response:**
-```json
-{
-  "success":  true,
-  "url":      "https://cdn.moviebox.ph/...",
-  "quality":  "1080p",
-  "provider": "moviebox-v2"
-}
-```
-
-**Error response:**
-```json
-{
-  "success": false,
-  "error":   "Title not found on MovieBox."
-}
-```
+| **Trending movies & TV** | Sortable feeds (Trending, Popular, Top Rated, Now Playing / On Air…) with infinite "Load more" |
+| **Search** | Live multi-search (movies + TV + people) with keyboard nav (`/` or `⌘K`) + a full results page |
+| **Detail pages** | Hero, cast & crew, stats (budget/revenue/profit, ratings…), similar titles |
+| **▶ Play Trailer** | Plays the official YouTube trailer in a fullscreen modal |
+| **Where to Watch** | Real streaming/rent/buy availability for the viewer's region (TMDB + JustWatch) with deep links |
+| **Watchlist & Favourites** | ♥ / 🔖 on every card, saved in `localStorage`, with a management page |
+| **Dark / Light theme** | Animated toggle, persisted, no flash on load |
+| **12 languages** | Switches TMDB content language site-wide |
+| **Responsive** | Mobile hamburger nav, full-width mobile search, adaptive grids |
 
 ---
 
-## Architecture: How Streaming Works
+## 🚀 Setup
 
-```
-Browser                   Node.js (localhost:3001)         Python CLI
-  │                               │                              │
-  │── POST /api/stream/resolve ──►│                              │
-  │      { type, title, ... }     │── spawn: moviebox v2 ───────►│
-  │                               │   download-movie "Inception" │
-  │                               │   --url-only                 │
-  │                               │◄─ stdout: https://cdn.../... │
-  │◄── { success:true, url } ─────│                              │
-  │                               │
-  │── <video src="url"> ──────────────────────────────────────►(CDN)
-  │   (direct browser ↔ CDN)
-  │
-  │── GET /api/stream/proxy?url=  (only if CDN blocks CORS)
-  │◄── piped video bytes ─────────────────────────────────────►(CDN)
-```
+### 1 — Add your TMDB API key
+The app needs a **free** TMDB API key (v3).
 
-The Node.js server spawns `moviebox` (or `python -m moviebox_api` as fallback),
-captures the direct MP4/HLS URL from stdout, and returns it to the browser.
-The browser's `<video>` element then connects directly to the CDN — the backend
-only proxies if the CDN enforces CORS restrictions.
+1. Create an account → https://www.themoviedb.org/signup
+2. Request an API key → https://www.themoviedb.org/settings/api  (free, instant)
+3. Copy `frontend/config.example.js` to `frontend/config.js`
+4. Paste your key:
 
----
-
-## Deployment
-
-### Backend — Render.com (free tier)
-
-1. Push `backend/` to a GitHub repo
-2. Create a new **Web Service** on Render → connect repo
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Add environment variables: `PORT`, `ALLOWED_ORIGINS`
-6. **Important:** Also install Python + moviebox-api in the build step:
-   ```
-   pip install "moviebox-api[cli]" && npm install
+   ```js
+   // frontend/config.js
+   window.MOVIEZDB_CONFIG = {
+     TMDB_KEY: 'paste-your-key-here',
+     DEFAULT_LANG: 'en',
+   };
    ```
 
-### Frontend — Netlify / Vercel / GitHub Pages
+> `config.js` is **gitignored** — your key never gets committed. The whole app
+> reads the key from this one file. (TMDB v3 keys are visible in the browser's
+> network requests by design; if you ever need it hidden, put a tiny serverless
+> proxy in front — but it's optional and not required.)
 
-Drag-and-drop the `frontend/` folder to Netlify, or push to GitHub and enable
-GitHub Pages. Set `window.MOVIEZDB_BACKEND` in each HTML file to point to your
-deployed backend URL before `shared.js` loads.
+### 2 — Run it
+It's just static files — serve the `frontend/` folder with anything:
+
+```bash
+npm start                         # → http://localhost:3000 (uses `serve`)
+# or
+python -m http.server 8000 --directory frontend
+# or: VS Code "Live Server" → right-click frontend/index.html → Open with Live Server
+```
+
+> Open it through a server (not `file://`) so the config + fetches work.
 
 ---
 
-## Rate Limiting
+## 📦 Deploy (free static hosting)
 
-The `/api/stream/resolve` endpoint is rate-limited to **15 requests per minute per IP**
-to prevent abuse. Adjust `max` in `server.js` if needed.
+Point any static host at the **`frontend/`** folder and add your `config.js`:
+
+- **Netlify / Vercel:** set the publish/output directory to `frontend`. Add a
+  `config.js` (or generate it from an env var at build time).
+- **GitHub Pages / Cloudflare Pages:** publish the `frontend/` directory.
+
+There is **no backend** — nothing to provision, scale, or pay for.
 
 ---
 
-## Legal Note
+## 🗂 Project structure
 
-`moviebox-api` accesses content from third-party services. Ensure you comply with
-the terms of service of those services and your local copyright laws before use.
-This project is intended for educational and personal use only.
+```
+moviezDB/
+├── frontend/
+│   ├── index.html         — Trending / popular movies
+│   ├── series.html        — TV series
+│   ├── details.html       — Movie / series detail + Play Trailer + Where to Watch
+│   ├── genre.html         — Browse by genre
+│   ├── person.html        — Actor / crew profile
+│   ├── search.html        — Full search results
+│   ├── watchlist.html     — Watchlist & favourites
+│   ├── shared.css         — Design system (dark + light, all shared components)
+│   ├── shared.js          — window.App: Nav, Search, Profile, Theme, Lang,
+│   │                        Trailer player, Toasts, Store (watchlist/favourites)
+│   ├── config.example.js  — Copy → config.js, add your TMDB key
+│   └── favicon.svg
+├── package.json           — convenience `npm start` (static server)
+└── README.md
+```
+
+---
+
+## ⚖️ Attribution & legal
+
+- This product uses the **TMDB API** but is not endorsed or certified by TMDB.
+  Per TMDB's terms, attribute them in your footer/about when deploying publicly.
+- "Where to Watch" availability is provided by **JustWatch** (via TMDB) — keep
+  the on-page JustWatch attribution.
+- Trailers are embedded from **YouTube**.

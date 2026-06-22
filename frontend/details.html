@@ -16,7 +16,11 @@
       padding:3rem 2rem 2.5rem; align-items:flex-end;
       max-width:1100px; margin:0 auto; width:100%;
     }
-    .poster-wrap { position:relative; flex-shrink:0; }
+    .poster-wrap { flex-shrink:0; }
+    /* poster-box wraps ONLY the poster, so the ♥/🔖 pills (absolute) anchor to
+       the poster's bottom edge — not the whole column (which would float them
+       down over the Watch Now button). */
+    .poster-box  { position:relative; }
     .poster { width:200px; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.7); border:1px solid var(--border); display:block; }
     .poster-actions {
       position:absolute; bottom:-16px; left:0; right:0;
@@ -120,8 +124,11 @@
     }
 
     /* ── WATCH CTA ── */
+    /* margin-top clears the .poster-actions pills, which float at bottom:-16px
+       over the poster (≈+16px past its base) — keep a solid gap so Watch Now
+       never collides with the ♥ / 🔖 buttons. */
     .watch-cta {
-      margin-top:1.25rem; display:flex; flex-direction:column; gap:.6rem;
+      margin-top:2.5rem; display:flex; flex-direction:column; gap:.6rem;
     }
     .ep-picker {
       display:flex; gap:.5rem;
@@ -137,6 +144,16 @@
       flex:1;
     }
     .ep-select:focus { border-color:var(--accent); }
+
+    /* ── Where to watch (providers) ── */
+    .wtw-row   { display:flex; align-items:center; gap:1rem; margin-bottom:.9rem; flex-wrap:wrap; }
+    .wtw-label { font-size:.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); width:58px; flex-shrink:0; }
+    .wtw-logos { display:flex; gap:.55rem; flex-wrap:wrap; }
+    .wtw-prov img { width:46px; height:46px; border-radius:10px; border:1px solid var(--border); transition:transform .2s, border-color .2s; }
+    .wtw-prov:hover img { transform:translateY(-2px); border-color:var(--accent); }
+    .wtw-note  { font-size:.72rem; color:var(--muted); margin-top:.4rem; }
+    .wtw-note a { color:var(--accent); }
+    .stream-btn:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; transform:none; }
   </style>
 </head>
 <body>
@@ -145,12 +162,13 @@
 <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
 <div id="main-content" class="hidden"></div>
 
+<script src="config.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
   document.documentElement.lang = App.Lang.current();
 
-  const API_KEY  = '6e3d6ad4aea48a0574572ba2f174e8bc';
+  const API_KEY  = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG      = 'https://image.tmdb.org/t/p/w500';
   const IMG_ORIG = 'https://image.tmdb.org/t/p/original';
   const params   = new URLSearchParams(window.location.search);
@@ -216,6 +234,42 @@
     </div>`;
   }
 
+  // ── Where to watch (TMDB /watch/providers — JustWatch data) ──
+  async function loadProviders(id, type) {
+    try {
+      const r = await fetch(`https://api.themoviedb.org/3/${type}/${id}/watch/providers?api_key=${API_KEY}`);
+      const d = await r.json();
+      return d.results || {};
+    } catch { return {}; }
+  }
+  function pickRegion(results) {
+    const loc = (navigator.language || 'en-US').split('-')[1] || 'US';
+    if (results[loc]) return loc;
+    if (results.US)   return 'US';
+    return Object.keys(results)[0] || null;
+  }
+  function providersSection(results) {
+    const region = pickRegion(results || {});
+    if (!region || !results[region]) return '';
+    const data = results[region];
+    const link = data.link || '';
+    const groups = [['flatrate','Stream'], ['rent','Rent'], ['buy','Buy']];
+    let rows = '';
+    groups.forEach(([key, label]) => {
+      const list = data[key];
+      if (!list || !list.length) return;
+      rows += `<div class="wtw-row"><span class="wtw-label">${label}</span><div class="wtw-logos">${
+        list.map(p => `<a href="${link}" target="_blank" rel="noopener" class="wtw-prov" title="${p.provider_name}"><img src="https://image.tmdb.org/t/p/w92${p.logo_path}" alt="${p.provider_name}" loading="lazy"></a>`).join('')
+      }</div></div>`;
+    });
+    if (!rows) return '';
+    return `<div class="section wtw-section">
+      <div class="section-title">Where to Watch <span class="section-count">${region}</span></div>
+      ${rows}
+      <div class="wtw-note">Availability for your region${link ? ` · <a href="${link}" target="_blank" rel="noopener">more options</a>` : ''} · data by JustWatch</div>
+    </div>`;
+  }
+
   if (!movieId && !seriesId) {
     spinner.classList.add('hidden'); mc.classList.remove('hidden');
     mc.innerHTML = '<p class="error-msg">Error: No movie or series ID provided.</p>';
@@ -227,7 +281,8 @@
     Promise.all([
       fetch(url,{headers:{accept:'application/json'}}).then(r=>r.json()),
       loadSimilar(itemId, itemType),
-    ]).then(([data, similar]) => {
+      loadProviders(itemId, itemType),
+    ]).then(([data, similar, providers]) => {
       spinner.classList.add('hidden'); mc.classList.remove('hidden');
 
       const title    = data.title||data.name||data.original_title||data.original_name||'Unknown';
@@ -253,6 +308,7 @@
       const castSection = peopleSection('cast','Cast', data.credits?.cast||[], 'character', 8);
       const crewSection = peopleSection('crew','Crew', data.credits?.crew||[], 'job', 8);
       const simHtml     = similarRow(similar, itemType);
+      const provHtml    = providersSection(providers);
 
       mc.innerHTML = `
         <div class="hero">
@@ -260,28 +316,17 @@
           <div class="hero-gradient"></div>
           <div class="hero-content">
             ${poster ? `<div class="poster-wrap">
-              <img class="poster" src="${poster}" alt="${title}">
-              <div class="poster-actions">
-                <button class="pa-btn ${isFav?'pa-fav-on':''}" id="pa-fav">♥ <span>${isFav?'Favourited':'Favourite'}</span></button>
-                <button class="pa-btn ${isWatch?'pa-watch-on':''}" id="pa-watch">🔖 <span>${isWatch?'In List':'Watchlist'}</span></button>
+              <div class="poster-box">
+                <img class="poster" src="${poster}" alt="${title}">
+                <div class="poster-actions">
+                  <button class="pa-btn ${isFav?'pa-fav-on':''}" id="pa-fav">♥ <span>${isFav?'Favourited':'Favourite'}</span></button>
+                  <button class="pa-btn ${isWatch?'pa-watch-on':''}" id="pa-watch">🔖 <span>${isWatch?'In List':'Watchlist'}</span></button>
+                </div>
               </div>
               <div class="watch-cta">
-                ${itemType === 'tv' ? `
-                  <div class="ep-picker">
-                    <select class="ep-select" id="ep-season" aria-label="Season">
-                      ${Array.from({length: data.number_of_seasons||1}, (_,i) =>
-                        `<option value="${i+1}">Season ${i+1}</option>`
-                      ).join('')}
-                    </select>
-                    <select class="ep-select" id="ep-episode" aria-label="Episode">
-                      ${Array.from({length: 20}, (_,i) =>
-                        `<option value="${i+1}">Ep ${i+1}</option>`
-                      ).join('')}
-                    </select>
-                  </div>` : ''}
-                <button class="stream-btn" id="watch-btn">
+                <button class="stream-btn" id="watch-btn" ${trailerKey ? '' : 'disabled'}>
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
-                  Watch Now
+                  ${trailerKey ? 'Play Trailer' : 'No Trailer'}
                 </button>
               </div>
             </div>` : ''}
@@ -307,25 +352,12 @@
             </div>
           </div>
         </div>
-        <div class="main">${castSection}${crewSection}${trailerHtml}${simHtml}</div>`;
+        <div class="main">${provHtml}${castSection}${crewSection}${trailerHtml}${simHtml}</div>`;
 
       // Watch Now button — reads episode selectors for TV
-      document.getElementById('watch-btn')?.addEventListener('click', () => {
-        const season  = itemType === 'tv'
-          ? +(document.getElementById('ep-season')?.value  || 1)
-          : undefined;
-        const episode = itemType === 'tv'
-          ? +(document.getElementById('ep-episode')?.value || 1)
-          : undefined;
-        App.Stream.open({
-          type:      itemType,
-          title,
-          tmdbId:    itemId,
-          season,
-          episode,
-          posterUrl: poster,
-        });
-      });
+      document.getElementById('watch-btn')?.addEventListener('click', () =>
+        App.Trailer.open({ title, youtubeKey: trailerKey })
+      );
 
       // Poster action buttons
       const itemMeta = { id:itemId, type:itemType, title, poster };

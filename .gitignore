@@ -1,2 +1,6 @@
 .env
 node_modules
+
+# Local TMDB key — each deploy/buyer supplies their own via config.example.js
+frontend/config.js
+

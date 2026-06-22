@@ -1,0 +1,11 @@
+{
+  "name": "moviezdb",
+  "version": "1.0.0",
+  "description": "MoviezDB — a static movie & TV discovery app powered by TMDB (trailers + where-to-watch).",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve frontend -l 3000",
+    "dev": "npx --yes serve frontend -l 3000"
+  },
+  "license": "MIT"
+}

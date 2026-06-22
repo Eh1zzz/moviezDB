@@ -24,7 +24,8 @@
 
 (function () {
 
-  const API_KEY = '6e3d6ad4aea48a0574572ba2f174e8bc';
+  const API_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
+  if (!API_KEY) console.warn('[MoviezDB] No TMDB key found — copy config.example.js to config.js and add your free key.');
   const IMG_SM  = 'https://image.tmdb.org/t/p/w92';
   const IMG_W5  = 'https://image.tmdb.org/t/p/w500';
 
@@ -409,162 +410,52 @@
     },
   };
 
-  /* ── STREAM ───────────────────────────── */
-  const BACKEND_URL = window.MOVIEZDB_BACKEND || 'http://localhost:3001';
+  /* ── TRAILER PLAYER ───────────────────── */
+  // Plays the official YouTube trailer in a fullscreen modal. (Replaces the old
+  // moviebox stream-resolve flow — see "Where to watch" on the details page for
+  // legitimate streaming links.)
+  const Trailer = {
+    /** @param {object} opts - { title, youtubeKey } */
+    open({ title, youtubeKey } = {}) {
+      if (!youtubeKey) { Toast.show('No trailer available for this title', '🎬'); return; }
 
-  const Stream = {
-    /**
-     * Open the stream player modal for a given title.
-     * @param {object} opts - { type:'movie'|'tv', title, tmdbId, season?, episode?, posterUrl? }
-     */
-    async open(opts) {
-      const { type, title, tmdbId, season, episode, posterUrl } = opts;
-
-      // Build or reuse the modal
-      let modal = document.getElementById('stream-modal');
+      let modal = document.getElementById('trailer-modal');
       if (!modal) {
         modal = document.createElement('div');
-        modal.id = 'stream-modal';
+        modal.id = 'trailer-modal';
         modal.innerHTML = `
-          <div class="sm-backdrop" id="sm-backdrop"></div>
-          <div class="sm-panel">
-            <div class="sm-header">
-              <div class="sm-title-row">
-                <h2 class="sm-title" id="sm-title"></h2>
-                <button class="sm-close" id="sm-close" aria-label="Close player">✕</button>
-              </div>
-              <div class="sm-quality-row" id="sm-quality-row"></div>
+          <div class="tr-backdrop" id="tr-backdrop"></div>
+          <div class="tr-panel">
+            <div class="tr-header">
+              <h2 class="tr-title" id="tr-title"></h2>
+              <button class="tr-close" id="tr-close" aria-label="Close trailer">✕</button>
             </div>
-            <div class="sm-body" id="sm-body">
-              <div class="sm-loading" id="sm-loading">
-                <div class="sm-spinner"></div>
-                <p id="sm-loading-msg">Resolving stream…</p>
-              </div>
-              <div class="sm-player hidden" id="sm-player">
-                <video id="sm-video" controls playsinline preload="metadata"
-                       crossorigin="anonymous">
-                  <p>Your browser does not support the video player.</p>
-                </video>
-                <div class="sm-ep-nav hidden" id="sm-ep-nav">
-                  <button class="sm-ep-btn" id="sm-prev-ep">← Prev Episode</button>
-                  <span id="sm-ep-label"></span>
-                  <button class="sm-ep-btn" id="sm-next-ep">Next Episode →</button>
-                </div>
-              </div>
-              <div class="sm-error hidden" id="sm-error">
-                <span class="sm-error-icon">⚠️</span>
-                <p id="sm-error-msg"></p>
-                <button class="sm-retry-btn" id="sm-retry">Try Again</button>
-              </div>
+            <div class="tr-frame">
+              <iframe id="tr-iframe" title="Trailer"
+                      allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen></iframe>
             </div>
           </div>`;
         document.body.appendChild(modal);
-
-        document.getElementById('sm-close').addEventListener('click', () => Stream.close());
-        document.getElementById('sm-backdrop').addEventListener('click', () => Stream.close());
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') Stream.close(); });
+        document.getElementById('tr-close').addEventListener('click', () => Trailer.close());
+        document.getElementById('tr-backdrop').addEventListener('click', () => Trailer.close());
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') Trailer.close(); });
       }
 
-      // Store current context for retry / episode nav
-      this._ctx = { type, title, tmdbId, season: season || 1, episode: episode || 1, posterUrl };
-
-      document.getElementById('sm-title').textContent = title;
-      this._showLoading('Resolving stream…');
+      document.getElementById('tr-title').textContent = title || 'Trailer';
+      document.getElementById('tr-iframe').src =
+        `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&rel=0`;
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
-
-      // Episode controls for TV
-      const epNav = document.getElementById('sm-ep-nav');
-      if (type === 'tv' && season && episode) {
-        document.getElementById('sm-ep-label').textContent = `S${season} E${episode}`;
-        epNav.classList.remove('hidden');
-        document.getElementById('sm-prev-ep').onclick = () => this._changeEpisode(-1);
-        document.getElementById('sm-next-ep').onclick = () => this._changeEpisode(+1);
-      } else {
-        epNav?.classList.add('hidden');
-      }
-
-      // Quality selector
-      document.getElementById('sm-quality-row').innerHTML = ['480p','720p','1080p'].map(q =>
-        `<button class="sm-q-btn ${q === '1080p' ? 'active' : ''}" data-quality="${q}">${q}</button>`
-      ).join('');
-      document.getElementById('sm-quality-row').addEventListener('click', e => {
-        const btn = e.target.closest('.sm-q-btn');
-        if (!btn) return;
-        document.querySelectorAll('.sm-q-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this._ctx.quality = btn.dataset.quality;
-        this._resolve();
-      });
-
-      document.getElementById('sm-retry').addEventListener('click', () => this._resolve());
-      await this._resolve();
-    },
-
-    async _resolve() {
-      const { type, title, season, episode, quality } = this._ctx;
-      this._showLoading('Resolving stream…');
-      try {
-        const res  = await fetch(`${BACKEND_URL}/api/stream/resolve`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type, title, season, episode, quality: quality || '1080p' }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.error || 'Could not resolve stream.');
-        this._play(data.url);
-      } catch (err) {
-        this._showError(err.message);
-      }
-    },
-
-    _play(url) {
-      const video = document.getElementById('sm-video');
-      const isHLS = url.includes('.m3u8');
-      if (isHLS && window.Hls?.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia(video);
-      } else {
-        video.src = url;
-      }
-      this._showPlayer();
-      video.play().catch(() => {});
-    },
-
-    _changeEpisode(delta) {
-      const ctx = this._ctx;
-      ctx.episode = Math.max(1, ctx.episode + delta);
-      document.getElementById('sm-ep-label').textContent = `S${ctx.season} E${ctx.episode}`;
-      document.getElementById('sm-video').pause();
-      this._resolve();
     },
 
     close() {
-      const modal = document.getElementById('stream-modal');
+      const modal = document.getElementById('trailer-modal');
       if (!modal) return;
       modal.classList.remove('open');
       document.body.style.overflow = '';
-      const video = document.getElementById('sm-video');
-      if (video) { video.pause(); video.src = ''; }
-    },
-
-    _showLoading(msg) {
-      document.getElementById('sm-loading').classList.remove('hidden');
-      document.getElementById('sm-player').classList.add('hidden');
-      document.getElementById('sm-error').classList.add('hidden');
-      document.getElementById('sm-loading-msg').textContent = msg;
-    },
-    _showPlayer() {
-      document.getElementById('sm-loading').classList.add('hidden');
-      document.getElementById('sm-player').classList.remove('hidden');
-      document.getElementById('sm-error').classList.add('hidden');
-    },
-    _showError(msg) {
-      document.getElementById('sm-loading').classList.add('hidden');
-      document.getElementById('sm-player').classList.add('hidden');
-      document.getElementById('sm-error').classList.remove('hidden');
-      document.getElementById('sm-error-msg').textContent = msg;
+      const f = document.getElementById('tr-iframe');
+      if (f) f.src = '';   // stop playback
     },
   };
 
@@ -701,6 +592,6 @@
   }
 
   /* ── EXPOSE ───────────────────────────── */
-  window.App = { buildNav, Store, Toast, Profile, Theme, Lang, Stream, injectCardActions };
+  window.App = { buildNav, Store, Toast, Profile, Theme, Lang, Trailer, injectCardActions };
 
 })();

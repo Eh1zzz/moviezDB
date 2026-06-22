@@ -42,7 +42,7 @@
 
 /* ── BASE RESET ──────────────────────────── */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg); color: var(--text);
@@ -391,12 +391,11 @@ img { display: block; }
 .error-msg { color: var(--red); text-align: center; padding: 3rem; font-size: .95rem; }
 
 /* ── RESPONSIVE ──────────────────────────── */
+/* Compact nav (tablet & down): the page links collapse into the hamburger
+   drawer, the language + profile buttons shrink to icons, and the search bar
+   flexes to fill the freed space so it's always usable. */
 @media (max-width: 860px) {
-  .nav-search { max-width: 240px; }
   .nav-search-kbd { display: none; }
-}
-
-@media (max-width: 620px) {
   .nav-hamburger { display: flex; }
   .nav-links {
     position: fixed; inset-block: 0; right: 0; width: min(280px,82vw);
@@ -412,8 +411,20 @@ img { display: block; }
     padding: .9rem .5rem; font-size: 1.05rem;
     border-bottom: 1px solid var(--border); border-radius: 0;
   }
-  .nav-search { max-width: none; flex: 1; }
+  .nav-search     { max-width: none; flex: 1 1 auto; min-width: 0; }
+  .nav-search-box { min-width: 0; }
   .profile-label, .profile-caret { display: none; }
+  .lang-current   { display: none; }
+  .lang-btn       { padding: 5px 8px; }
+}
+
+/* Phones: give the search its own full-width row so it never gets crushed. */
+@media (max-width: 440px) {
+  #app-nav {
+    flex-wrap: wrap; height: auto; min-height: var(--nav-h);
+    padding-top: .55rem; padding-bottom: .55rem; row-gap: .55rem;
+  }
+  .nav-search { order: 10; flex-basis: 100%; }
 }
 
 /* ── LANGUAGE SWITCHER ───────────────────── */
@@ -455,97 +466,39 @@ img { display: block; }
 .lang-name { flex: 1; }
 .lang-check { color: var(--accent); font-size: .8rem; }
 
-/* ── STREAM MODAL ─────────────────────────── */
-#stream-modal {
+/* ── TRAILER MODAL ────────────────────────── */
+#trailer-modal {
   position: fixed; inset: 0; z-index: 900;
   display: none; align-items: center; justify-content: center;
   padding: 1rem;
 }
-#stream-modal.open { display: flex; }
-
-.sm-backdrop {
+#trailer-modal.open { display: flex; }
+.tr-backdrop {
   position: absolute; inset: 0;
-  background: rgba(0,0,0,.85); backdrop-filter: blur(8px);
+  background: rgba(0,0,0,.88); backdrop-filter: blur(8px);
 }
-.sm-panel {
+.tr-panel {
   position: relative; z-index: 1;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; width: 100%; max-width: 900px;
+  border-radius: 14px; width: 100%; max-width: 960px;
   box-shadow: 0 32px 80px rgba(0,0,0,.7);
-  overflow: hidden;
-  transition: background var(--theme-speed);
-  max-height: 90vh; display: flex; flex-direction: column;
+  overflow: hidden; transition: background var(--theme-speed);
 }
-.sm-header {
-  padding: 1rem 1.25rem .75rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+.tr-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .8rem 1.1rem; border-bottom: 1px solid var(--border);
 }
-.sm-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
-.sm-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 1.5px; }
-.sm-close {
+.tr-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 1.5px; }
+.tr-close {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--surface2); border: 1px solid var(--border);
   color: var(--muted); font-size: 1rem; display: flex;
   align-items: center; justify-content: center;
   cursor: pointer; transition: all .2s; flex-shrink: 0;
 }
-.sm-close:hover { background: rgba(224,82,82,.12); color: var(--red); border-color: rgba(224,82,82,.4); }
-
-.sm-quality-row { display: flex; gap: .4rem; flex-wrap: wrap; }
-.sm-q-btn {
-  padding: 3px 10px; border-radius: 4px; font-size: .73rem; font-weight: 600;
-  background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
-  cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif;
-}
-.sm-q-btn:hover { border-color: var(--border-hi); color: var(--text); }
-.sm-q-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-
-.sm-body { flex: 1; overflow: hidden; min-height: 0; }
-
-.sm-loading {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 4rem 2rem; gap: 1rem;
-  color: var(--muted); font-size: .9rem;
-}
-.sm-spinner {
-  width: 40px; height: 40px; border: 3px solid var(--surface2);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-
-.sm-player { display: flex; flex-direction: column; height: 100%; }
-#sm-video {
-  width: 100%; display: block; background: #000;
-  max-height: calc(90vh - 120px);
-  outline: none;
-}
-.sm-ep-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: .75rem 1.25rem; border-top: 1px solid var(--border);
-  font-size: .82rem; color: var(--muted);
-}
-.sm-ep-btn {
-  background: var(--surface2); border: 1px solid var(--border);
-  color: var(--text); padding: 6px 14px; border-radius: 6px;
-  font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 600;
-  cursor: pointer; transition: all .2s;
-}
-.sm-ep-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-.sm-error {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 3rem 2rem; gap: .75rem; text-align: center;
-}
-.sm-error-icon { font-size: 2rem; }
-#sm-error-msg { color: var(--muted); font-size: .88rem; max-width: 400px; line-height: 1.6; }
-.sm-retry-btn {
-  background: var(--accent); color: #000; border: none;
-  padding: 8px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif;
-  font-size: .84rem; font-weight: 700; cursor: pointer; margin-top: .5rem;
-  transition: opacity .2s;
-}
-.sm-retry-btn:hover { opacity: .85; }
+.tr-close:hover { background: rgba(224,82,82,.12); color: var(--red); border-color: rgba(224,82,82,.4); }
+.tr-frame { aspect-ratio: 16 / 9; background: #000; }
+.tr-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 
 /* ── STREAM BUTTON (used on cards and details page) ── */
 .stream-btn {
@@ -561,8 +514,4 @@ img { display: block; }
 .stream-btn:active { transform: scale(.97); }
 .stream-btn svg { width: 14px; height: 14px; }
 
-/* hide lang label on very small screens */
-@media(max-width:620px) {
-  .lang-current { display: none; }
-  .lang-btn { padding: 5px 8px; }
-}
+/* (language-button label hiding is handled in the ≤860px compact-nav block) */

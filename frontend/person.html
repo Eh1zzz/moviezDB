@@ -48,11 +48,12 @@
 <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
 <div id="main-content" class="hidden"></div>
 
+<script src="config.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
   document.documentElement.lang = App.Lang.current();
-  const API_KEY  = '6e3d6ad4aea48a0574572ba2f174e8bc';
+  const API_KEY  = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG      = 'https://image.tmdb.org/t/p/w500';
   const spinner  = document.getElementById('spinner-container');
   const mc       = document.getElementById('main-content');
