@@ -5,6 +5,8 @@
    action buttons, spinner, utilities
    ========================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Rubik+Spray+Paint&family=Shantell+Sans:wght@300;400;500;600;700&display=swap');
+
 /* ── TOKENS ──────────────────────────────── */
 :root {
   --bg:       #0a0a0f;
@@ -44,7 +46,7 @@
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; overflow-x: clip; }
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Shantell Sans', sans-serif;
   background: var(--bg); color: var(--text);
   min-height: 100vh; overflow-x: hidden;
   transition: background var(--theme-speed), color var(--theme-speed);
@@ -101,7 +103,7 @@ img { display: block; }
 
 /* Logo */
 .nav-logo {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: 'Rubik Spray Paint', sans-serif;
   font-size: 1.75rem; letter-spacing: 3px;
   color: var(--accent); flex-shrink: 0;
   transition: opacity .2s;
@@ -141,7 +143,7 @@ img { display: block; }
 }
 .nav-search-input {
   background: none; border: none; outline: none;
-  color: var(--text); font-family: 'DM Sans', sans-serif;
+  color: var(--text); font-family: 'Shantell Sans', sans-serif;
   font-size: .875rem; padding: 9px 0; width: 100%;
 }
 .nav-search-input::placeholder { color: var(--muted); }
@@ -274,7 +276,7 @@ img { display: block; }
 }
 .pd-stat:last-child { border-right: none; }
 .pd-stat-n {
-  font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
+  font-family: 'Rubik Spray Paint', sans-serif; font-size: 1.4rem;
   color: var(--accent); line-height: 1;
 }
 .pd-stat-l {
@@ -304,7 +306,7 @@ img { display: block; }
   width: 100%; background: var(--surface2);
   border: 1.5px solid var(--border); color: var(--text);
   padding: 7px 10px; border-radius: 6px;
-  font-family: 'DM Sans', sans-serif; font-size: .85rem;
+  font-family: 'Shantell Sans', sans-serif; font-size: .85rem;
   outline: none; transition: border-color .2s;
 }
 .pd-edit-input:focus { border-color: var(--accent); }
@@ -312,7 +314,7 @@ img { display: block; }
 .pd-edit-save, .pd-edit-cancel {
   flex: 1; padding: 6px; border-radius: 6px;
   font-size: .78rem; font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Shantell Sans', sans-serif;
   cursor: pointer; border: 1px solid var(--border);
   transition: all .2s;
 }
@@ -458,7 +460,7 @@ img { display: block; }
   display: flex; align-items: center; gap: 9px; width: 100%;
   padding: 8px 12px; font-size: .84rem; color: var(--text);
   background: none; border: none; text-align: left; cursor: pointer;
-  transition: background .15s; font-family: 'DM Sans', sans-serif;
+  transition: background .15s; font-family: 'Shantell Sans', sans-serif;
 }
 .lang-option:hover { background: var(--surface2); }
 .lang-option.active { color: var(--accent); }
@@ -488,7 +490,7 @@ img { display: block; }
   display: flex; align-items: center; justify-content: space-between;
   padding: .8rem 1.1rem; border-bottom: 1px solid var(--border);
 }
-.tr-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 1.5px; }
+.tr-title { font-family: 'Rubik Spray Paint', sans-serif; font-size: 1.3rem; letter-spacing: 1.5px; }
 .tr-close {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--surface2); border: 1px solid var(--border);
@@ -506,7 +508,7 @@ img { display: block; }
   padding: 8px 18px; border-radius: 50px; font-size: .82rem; font-weight: 700;
   background: linear-gradient(135deg, var(--accent), #d4903a);
   color: #000; border: none; cursor: pointer;
-  font-family: 'DM Sans', sans-serif; letter-spacing: .3px;
+  font-family: 'Shantell Sans', sans-serif; letter-spacing: .3px;
   transition: opacity .2s, transform .15s, box-shadow .2s;
   box-shadow: 0 4px 16px rgba(232,184,75,.3);
 }
