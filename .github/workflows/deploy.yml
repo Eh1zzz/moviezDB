@@ -33,14 +33,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate config.js from secret
+      - name: Generate config.js from secrets
         run: |
           cat > frontend/config.js <<EOF
           window.MOVIEZDB_CONFIG = {
             TMDB_KEY: '${{ secrets.TMDB_KEY }}',
             DEFAULT_LANG: 'en',
+            SUPABASE_URL: '${{ secrets.SUPABASE_URL }}',
+            SUPABASE_ANON_KEY: '${{ secrets.SUPABASE_ANON_KEY }}',
           };
           EOF
+          echo "Wrote config.js (TMDB_KEY length: ${#TMDB_KEY_LEN})"
+        env:
+          TMDB_KEY_LEN: ${{ secrets.TMDB_KEY }}
 
       - uses: actions/configure-pages@v5
         with:
