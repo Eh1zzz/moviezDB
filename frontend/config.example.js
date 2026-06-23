@@ -12,4 +12,13 @@
 window.MOVIEZDB_CONFIG = {
   TMDB_KEY: 'YOUR_TMDB_API_KEY_HERE',
   DEFAULT_LANG: 'en',
+
+  // Optional — enables accounts, profiles, reviews, ratings & discussions.
+  // From your Supabase project → Settings → API:
+  //   SUPABASE_URL      = "Project URL"
+  //   SUPABASE_ANON_KEY = the "anon"/"publishable" public key (safe in browser).
+  //   ⚠️ NEVER put the secret / service_role key here.
+  // Leave blank to run as a TMDB-only app (no accounts).
+  SUPABASE_URL: '',
+  SUPABASE_ANON_KEY: '',
 };

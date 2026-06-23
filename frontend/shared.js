@@ -595,3 +595,15 @@
   window.App = { buildNav, Store, Toast, Profile, Theme, Lang, Trailer, injectCardActions };
 
 })();
+
+/* Optional social layer (accounts, profiles, reviews, ratings, discussions).
+   Loaded only when Supabase is configured in config.js — otherwise the app
+   stays a pure static TMDB app. */
+(function () {
+  const c = window.MOVIEZDB_CONFIG || {};
+  if (c.SUPABASE_URL && c.SUPABASE_ANON_KEY) {
+    const s = document.createElement('script');
+    s.src = 'social.js';
+    document.head.appendChild(s);
+  }
+})();
