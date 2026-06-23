@@ -51,6 +51,7 @@
     get user() { return user; },
     isAuthed() { return !!user; },
     onChange(fn) { listeners.push(fn); if (sb) fn(user); },
+    open() { openModal(); },
     async signUp(email, password, displayName) {
       const { error } = await sb.auth.signUp({ email, password, options: { data: { display_name: displayName || '' } } });
       if (error) throw error;
@@ -72,6 +73,17 @@
     },
   };
 
+  // Client-side author join — attach each row's profile (avoids needing a DB
+  // foreign-key/embed between reviews/discussions and profiles).
+  async function attachProfiles(rows) {
+    const ids = [...new Set(rows.map(r => r.user_id))];
+    if (!ids.length) return rows;
+    const { data } = await sb.from('profiles').select('id,display_name,avatar_emoji').in('id', ids);
+    const map = {};
+    (data || []).forEach(p => { map[p.id] = p; });
+    return rows.map(r => ({ ...r, profile: map[r.user_id] || { display_name: 'Movie Fan', avatar_emoji: '🎬' } }));
+  }
+
   /* ── SOCIAL DATA API (used by details.html) ── */
   const Social = {
     ready,
@@ -91,10 +103,9 @@
       if (error) throw error;
     },
     async getReviews(id, type) {
-      const { data } = await sb.from('reviews')
-        .select('id,user_id,body,created_at,profiles(display_name,avatar_emoji)')
+      const { data, error } = await sb.from('reviews').select('id,user_id,body,created_at')
         .match({ tmdb_id: id, media_type: type }).order('created_at', { ascending: false });
-      return data || [];
+      return (error || !data) ? [] : attachProfiles(data);
     },
     async addReview(id, type, body) {
       this.requireAuth();
@@ -107,10 +118,9 @@
       if (error) throw error;
     },
     async getDiscussions(id, type) {
-      const { data } = await sb.from('discussions')
-        .select('id,user_id,body,created_at,profiles(display_name,avatar_emoji)')
+      const { data, error } = await sb.from('discussions').select('id,user_id,body,created_at')
         .match({ tmdb_id: id, media_type: type }).order('created_at', { ascending: true });
-      return data || [];
+      return (error || !data) ? [] : attachProfiles(data);
     },
     async addDiscussion(id, type, body) {
       this.requireAuth();

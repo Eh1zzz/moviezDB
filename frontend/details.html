@@ -154,6 +154,37 @@
     .wtw-note  { font-size:.72rem; color:var(--muted); margin-top:.4rem; }
     .wtw-note a { color:var(--accent); }
     .stream-btn:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; transform:none; }
+
+    /* ── Social (ratings / reviews / discussions) ── */
+    .rate-box { display:flex; flex-wrap:wrap; gap:1.2rem 2.5rem; align-items:center; margin-bottom:1.25rem; }
+    .rate-community { display:flex; flex-direction:column; }
+    .rate-avg { font-family:'Rubik Spray Paint',sans-serif; font-size:2.4rem; color:var(--accent); line-height:1; }
+    .rate-meta { font-size:.74rem; color:var(--muted); margin-top:.2rem; }
+    .rate-mine { display:flex; flex-direction:column; gap:.35rem; }
+    .rate-label { font-size:.7rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+    .rstars { display:flex; gap:1px; }
+    .rstar { font-size:1.3rem; line-height:1; color:var(--surface3); background:none; border:none; cursor:pointer; transition:color .12s, transform .12s; padding:0 1px; }
+    .rstar:hover, .rstar.on { color:var(--accent); }
+    .rstar:hover { transform:scale(1.18); }
+    .social-compose { margin-bottom:1.1rem; }
+    .social-compose.row { display:flex; gap:.5rem; align-items:flex-start; }
+    .social-input { width:100%; background:var(--surface2); border:1.5px solid var(--border); color:var(--text); border-radius:9px; padding:9px 11px; font-family:inherit; font-size:.88rem; outline:none; resize:vertical; transition:border-color .2s; }
+    .social-input:focus { border-color:var(--accent); }
+    .social-btn { margin-top:.5rem; padding:9px 18px; border-radius:8px; background:var(--accent); color:#000; border:none; font-family:inherit; font-size:.84rem; font-weight:700; cursor:pointer; transition:opacity .2s; white-space:nowrap; }
+    .social-compose.row .social-btn { margin-top:0; }
+    .social-btn:hover { opacity:.9; }
+    .social-btn.ghost { background:none; border:1.5px solid var(--border); color:var(--muted); font-weight:600; }
+    .social-btn.ghost:hover { border-color:var(--accent); color:var(--accent); }
+    .social-list { display:flex; flex-direction:column; gap:.7rem; }
+    .social-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:.8rem 1rem; }
+    .social-head { display:flex; align-items:center; gap:.5rem; margin-bottom:.4rem; }
+    .social-ava { font-size:1.05rem; }
+    .social-name { font-weight:600; font-size:.85rem; }
+    .social-time { font-size:.72rem; color:var(--muted); margin-left:auto; }
+    .social-del { background:none; border:none; cursor:pointer; font-size:.85rem; opacity:.55; }
+    .social-del:hover { opacity:1; }
+    .social-text { font-size:.88rem; line-height:1.6; color:var(--text); white-space:pre-wrap; }
+    .social-empty { font-size:.85rem; color:var(--muted); padding:.4rem 0; }
   </style>
 </head>
 <body>
@@ -270,6 +301,89 @@
     </div>`;
   }
 
+  // ── Social: ratings, reviews & discussions (only when Supabase is set up) ──
+  const sEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+  async function mountSocial(id, type) {
+    for (let i = 0; i < 40 && !window.App?.Social; i++) await new Promise(r => setTimeout(r, 150));
+    if (!window.App?.Social) return;          // Supabase not configured → no social section
+    await App.Social.ready;
+    const host = document.getElementById('social-mount');
+    if (!host) return;
+    host.innerHTML = `
+      <div class="section">
+        <div class="section-title">Ratings &amp; Reviews</div>
+        <div class="rate-box" id="rate-box"></div>
+        <div id="review-mine"></div>
+        <div class="social-list" id="review-list"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Discussion</div>
+        <div id="disc-compose"></div>
+        <div class="social-list" id="disc-list"></div>
+      </div>`;
+    const refresh = () => { renderRatings(id, type); renderReviews(id, type); renderDiscussions(id, type); };
+    App.Auth.onChange(refresh);               // renders now + re-renders on login/logout
+  }
+
+  async function renderRatings(id, type) {
+    const box = document.getElementById('rate-box'); if (!box) return;
+    const { avg, count, mine } = await App.Social.getRatings(id, type);
+    const stars = n => Array.from({ length: 10 }, (_, i) => `<button class="rstar ${i < (n || 0) ? 'on' : ''}" data-v="${i + 1}" aria-label="Rate ${i + 1}">★</button>`).join('');
+    box.innerHTML = `
+      <div class="rate-community"><span class="rate-avg">${avg ? avg.toFixed(1) : '—'}</span><span class="rate-meta">${count ? `${count} user rating${count > 1 ? 's' : ''}` : 'No user ratings yet'}</span></div>
+      <div class="rate-mine"><span class="rate-label">${App.Social.isAuthed() ? 'Your rating' : 'Sign in to rate'}</span><div class="rstars">${stars(mine)}</div></div>`;
+    box.querySelectorAll('.rstar').forEach(s => s.addEventListener('click', async () => {
+      try { await App.Social.setRating(id, type, +s.dataset.v); App.Toast?.show('Rating saved', '⭐'); renderRatings(id, type); }
+      catch (e) { if (e.message !== 'Please sign in first') App.Toast?.show(e.message, '⚠️'); }
+    }));
+  }
+
+  function authorCard(r, meId, delAttr) {
+    return `<div class="social-card">
+      <div class="social-head"><span class="social-ava">${sEsc(r.profile.avatar_emoji || '🎬')}</span><span class="social-name">${sEsc(r.profile.display_name)}</span><span class="social-time">${new Date(r.created_at).toLocaleDateString()}</span>${r.user_id === meId ? `<button class="social-del" ${delAttr}="${r.id}" title="Delete">🗑</button>` : ''}</div>
+      <div class="social-text">${sEsc(r.body)}</div></div>`;
+  }
+
+  async function renderReviews(id, type) {
+    const list = document.getElementById('review-list'), mine = document.getElementById('review-mine');
+    if (!list) return;
+    const reviews = await App.Social.getReviews(id, type);
+    const meId = App.Auth?.user?.id;
+    const myReview = reviews.find(r => r.user_id === meId);
+    if (App.Social.isAuthed()) {
+      mine.innerHTML = `<div class="social-compose"><textarea id="review-text" class="social-input" rows="3" placeholder="Write your review…">${myReview ? sEsc(myReview.body) : ''}</textarea><button class="social-btn" id="review-submit">${myReview ? 'Update review' : 'Post review'}</button></div>`;
+      document.getElementById('review-submit').addEventListener('click', async () => {
+        const t = document.getElementById('review-text').value.trim(); if (!t) return;
+        try { await App.Social.addReview(id, type, t); App.Toast?.show('Review posted', '📝'); renderReviews(id, type); }
+        catch (e) { App.Toast?.show(e.message, '⚠️'); }
+      });
+    } else {
+      mine.innerHTML = `<button class="social-btn ghost" id="review-signin">Sign in to write a review</button>`;
+      document.getElementById('review-signin').addEventListener('click', () => App.Auth.open());
+    }
+    list.innerHTML = reviews.length ? reviews.map(r => authorCard(r, meId, 'data-del-review')).join('') : `<p class="social-empty">No reviews yet — be the first.</p>`;
+    list.querySelectorAll('[data-del-review]').forEach(b => b.addEventListener('click', async () => { try { await App.Social.deleteReview(b.dataset.delReview); renderReviews(id, type); } catch (e) { App.Toast?.show(e.message, '⚠️'); } }));
+  }
+
+  async function renderDiscussions(id, type) {
+    const list = document.getElementById('disc-list'), compose = document.getElementById('disc-compose');
+    if (!list) return;
+    const rows = await App.Social.getDiscussions(id, type);
+    const meId = App.Auth?.user?.id;
+    if (App.Social.isAuthed()) {
+      compose.innerHTML = `<div class="social-compose row"><input id="disc-text" class="social-input" placeholder="Add a comment…" maxlength="2000"><button class="social-btn" id="disc-submit">Send</button></div>`;
+      const send = async () => { const t = document.getElementById('disc-text').value.trim(); if (!t) return; try { await App.Social.addDiscussion(id, type, t); document.getElementById('disc-text').value = ''; renderDiscussions(id, type); } catch (e) { App.Toast?.show(e.message, '⚠️'); } };
+      document.getElementById('disc-submit').addEventListener('click', send);
+      document.getElementById('disc-text').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+    } else {
+      compose.innerHTML = `<button class="social-btn ghost" id="disc-signin">Sign in to join the discussion</button>`;
+      document.getElementById('disc-signin').addEventListener('click', () => App.Auth.open());
+    }
+    list.innerHTML = rows.length ? rows.map(r => authorCard(r, meId, 'data-del-disc')).join('') : `<p class="social-empty">No comments yet.</p>`;
+    list.querySelectorAll('[data-del-disc]').forEach(b => b.addEventListener('click', async () => { try { await App.Social.deleteDiscussion(b.dataset.delDisc); renderDiscussions(id, type); } catch (e) { App.Toast?.show(e.message, '⚠️'); } }));
+  }
+
   if (!movieId && !seriesId) {
     spinner.classList.add('hidden'); mc.classList.remove('hidden');
     mc.innerHTML = '<p class="error-msg">Error: No movie or series ID provided.</p>';
@@ -352,7 +466,7 @@
             </div>
           </div>
         </div>
-        <div class="main">${provHtml}${castSection}${crewSection}${trailerHtml}${simHtml}</div>`;
+        <div class="main">${provHtml}${castSection}${crewSection}${trailerHtml}${simHtml}<div id="social-mount"></div></div>`;
 
       // Watch Now button — reads episode selectors for TV
       document.getElementById('watch-btn')?.addEventListener('click', () =>
@@ -386,6 +500,8 @@
           btn.textContent = h ? 'Show more' : 'Show less';
         });
       });
+
+      mountSocial(itemId, itemType);   // ratings / reviews / discussions (if Supabase configured)
 
     }).catch(err => {
       spinner.classList.add('hidden'); mc.classList.remove('hidden');
