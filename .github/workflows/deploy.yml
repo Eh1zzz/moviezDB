@@ -56,6 +56,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Cache-bust asset URLs
+        # GitHub Pages (via Fastly) caches shared.css / shared.js aggressively,
+        # so after a deploy a returning visitor's browser keeps serving the old
+        # build until the cache expires — which made fixes look like they hadn't
+        # shipped. Stamp every local asset reference with the commit SHA so each
+        # deploy produces fresh URLs the browser is forced to re-fetch.
+        run: |
+          V="${GITHUB_SHA::8}"
+          sed -i -E "s/(href|src)=\"(shared\.css|shared\.js|config\.js)\"/\1=\"\2?v=$V\"/g" frontend/*.html
+          sed -i "s|'social.js'|'social.js?v=$V'|g" frontend/shared.js
+          echo "Cache-busted local assets with v=$V"
+
       - uses: actions/configure-pages@v5
         with:
           enablement: true
