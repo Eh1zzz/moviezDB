@@ -64,7 +64,7 @@ jobs:
         # deploy produces fresh URLs the browser is forced to re-fetch.
         run: |
           V="${GITHUB_SHA::8}"
-          sed -i -E "s/(href|src)=\"(shared\.css|shared\.js|config\.js)\"/\1=\"\2?v=$V\"/g" frontend/*.html
+          sed -i -E "s/(href|src)=\"(shared\.css|shared\.js|config\.js|i18n\.js)\"/\1=\"\2?v=$V\"/g" frontend/*.html
           sed -i "s|'social.js'|'social.js?v=$V'|g" frontend/shared.js
           echo "Cache-busted local assets with v=$V"
 

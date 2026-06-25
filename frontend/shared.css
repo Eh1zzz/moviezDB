@@ -559,3 +559,41 @@ img { display: block; }
 .auth-btn:disabled { opacity: .55; cursor: default; }
 .auth-btn-ghost { background: none; border: 1.5px solid var(--border); color: var(--muted); font-weight: 600; margin-top: .5rem; }
 .auth-btn-ghost:hover { color: var(--red); border-color: rgba(224,82,82,.4); }
+
+/* ── RIGHT-TO-LEFT (Arabic) ───────────────────────────────────────────────
+   Flexbox rows reverse automatically under dir="rtl"; these overrides flip the
+   remaining PHYSICAL properties (absolute left/right offsets, auto margins,
+   text-align) so corner badges, dropdowns, toasts and labels mirror correctly.
+   Set on <html dir="rtl"> by App.I18n for Arabic. */
+[dir="rtl"] body { text-align: right; }
+
+/* Nav: push the actions cluster to the logical (left) end */
+[dir="rtl"] .nav-actions { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .nav-search-kbd { margin-right: 0; margin-left: 8px; }
+
+/* Dropdowns anchor to the opposite edge */
+[dir="rtl"] .profile-dropdown,
+[dir="rtl"] .lang-dropdown { right: auto; left: 0; }
+[dir="rtl"] .lang-option { text-align: right; }
+[dir="rtl"] .pd-stat { border-right: none; border-left: 1px solid var(--border); }
+[dir="rtl"] .pd-stat:last-child { border-left: none; }
+
+/* Toast slides in from the left */
+[dir="rtl"] #toast-root { right: auto; left: 1.5rem; }
+
+/* Card overlay watch/fav buttons move to the right corner */
+[dir="rtl"] .card-action.ca-fav   { left: auto; right: 9px; }
+[dir="rtl"] .card-action.ca-watch { left: auto; right: 45px; }
+
+/* Corner type/rating badges + list remove button mirror to the other corner.
+   (These classes live in per-page <style> blocks but the cascade is global.) */
+[dir="rtl"] .card-badge,
+[dir="rtl"] .sim-badge,
+[dir="rtl"] .m-badge,
+[dir="rtl"] .item-type-badge { right: auto; left: 8px; }
+[dir="rtl"] .item-remove { left: auto; right: 8px; }
+[dir="rtl"] .social-time { margin-left: 0; margin-right: auto; }
+
+/* Auth modal close button */
+[dir="rtl"] .auth-close { right: auto; left: .9rem; }
+[dir="rtl"] .auth-label { text-align: right; }

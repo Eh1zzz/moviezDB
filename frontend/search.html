@@ -89,28 +89,29 @@
 <nav id="app-nav"></nav>
 
 <div class="search-page">
-  <h1 class="search-heading" id="heading">SEARCH <em>RESULTS</em></h1>
-  <p class="search-count" id="result-count">Loading…</p>
+  <h1 class="search-heading" id="heading" data-i18n-html="search.resultsTitle">SEARCH <em>RESULTS</em></h1>
+  <p class="search-count" id="result-count" data-i18n="search.loading">Loading…</p>
 
   <div class="filter-tabs" id="filter-tabs">
-    <button class="f-tab active" data-type="all">All <span class="f-tab-count" id="cnt-all">0</span></button>
-    <button class="f-tab" data-type="movie">Movies <span class="f-tab-count" id="cnt-movie">0</span></button>
-    <button class="f-tab" data-type="tv">TV <span class="f-tab-count" id="cnt-tv">0</span></button>
-    <button class="f-tab" data-type="person">People <span class="f-tab-count" id="cnt-person">0</span></button>
+    <button class="f-tab active" data-type="all"><span data-i18n="search.all">All</span> <span class="f-tab-count" id="cnt-all">0</span></button>
+    <button class="f-tab" data-type="movie"><span data-i18n="nav.movies">Movies</span> <span class="f-tab-count" id="cnt-movie">0</span></button>
+    <button class="f-tab" data-type="tv"><span data-i18n="search.tv">TV</span> <span class="f-tab-count" id="cnt-tv">0</span></button>
+    <button class="f-tab" data-type="person"><span data-i18n="common.people">People</span> <span class="f-tab-count" id="cnt-person">0</span></button>
   </div>
 
   <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
   <div id="results" class="hidden"></div>
   <div class="lm-wrap hidden" id="lm-wrap">
-    <button class="lm-btn" id="lm-btn">Load More</button>
+    <button class="lm-btn" id="lm-btn" data-i18n="common.loadMore">Load More</button>
   </div>
 </div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
-  document.documentElement.lang = App.Lang.current();
+  App.I18n.apply();
   const API_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG     = 'https://image.tmdb.org/t/p/w500';
   const params  = new URLSearchParams(window.location.search);
@@ -128,13 +129,13 @@
   // Pre-fill nav search
   if (query) {
     document.title = `"${query}" — TMDB`;
-    headingEl.innerHTML = `RESULTS FOR <em>"${query}"</em>`;
+    headingEl.innerHTML = App.t('search.resultsFor', { q: query });
     setTimeout(()=>{ const inp=document.querySelector('.nav-search-input'); if(inp) inp.value=query; }, 80);
   }
 
   function makeMediaCard(r) {
     const isMovie = r.media_type==='movie';
-    const t    = r.title||r.name||'Unknown';
+    const t    = r.title||r.name||App.t('common.unknown');
     const yr   = (r.release_date||r.first_air_date||'').slice(0,4);
     const rat  = r.vote_average?r.vote_average.toFixed(1):'N/A';
     const img  = r.poster_path ? `${IMG}${r.poster_path}` : '';
@@ -143,7 +144,7 @@
     const card = document.createElement('a');
     card.href=href; card.className='m-card';
     card.innerHTML=`<img src="${img}" alt="${t}" loading="lazy"><div class="m-badge">★ ${rat}</div>
-      <div class="m-body"><div class="m-title">${t}</div><div class="m-meta">${yr||'—'} · ${isMovie?'Movie':'TV'}</div></div>`;
+      <div class="m-body"><div class="m-title">${t}</div><div class="m-meta">${yr||'—'} · ${isMovie?App.t('common.movie'):App.t('common.tv')}</div></div>`;
     App.injectCardActions(card, r.id, type, ()=>t);
     return card;
   }
@@ -152,7 +153,7 @@
     const photo = r.profile_path ? `${IMG}${r.profile_path}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(r.name)}&background=1a1a24&color=7a7a8c&size=104`;
     return `<a href="person.html?personId=${r.id}" class="p-row">
       <img class="p-avatar" src="${photo}" alt="${r.name}" loading="lazy">
-      <div><div class="p-name">${r.name}</div><div class="p-dept">${r.known_for_department||'Actor'}</div></div>
+      <div><div class="p-name">${r.name}</div><div class="p-dept">${r.known_for_department||App.t('person.actor')}</div></div>
     </a>`;
   }
 
@@ -161,7 +162,7 @@
     results.innerHTML='';
 
     if (!visible.length) {
-      results.innerHTML=`<div class="empty-state"><h3>No Results</h3><p>Try a different filter or search term.</p></div>`;
+      results.innerHTML=`<div class="empty-state"><h3>${App.t('search.noResults')}</h3><p>${App.t('search.tryDifferent')}</p></div>`;
       return;
     }
 
@@ -178,14 +179,14 @@
       // Mixed — separate sections
       if (media.length) {
         const sec=document.createElement('div'); sec.className='results-section';
-        const lbl=document.createElement('div'); lbl.className='results-section-label'; lbl.textContent='MOVIES & TV';
+        const lbl=document.createElement('div'); lbl.className='results-section-label'; lbl.textContent=App.t('search.moviesAndTv');
         const grid=document.createElement('div'); grid.className='media-grid';
         media.forEach(r=>grid.appendChild(makeMediaCard(r)));
         sec.appendChild(lbl); sec.appendChild(grid); results.appendChild(sec);
       }
       if (people.length) {
         const sec=document.createElement('div'); sec.className='results-section';
-        const lbl=document.createElement('div'); lbl.className='results-section-label'; lbl.textContent='PEOPLE';
+        const lbl=document.createElement('div'); lbl.className='results-section-label'; lbl.textContent=App.t('search.peopleLabel');
         const list=document.createElement('div'); list.className='people-list';
         list.innerHTML=people.map(makePersonRow).join('');
         sec.appendChild(lbl); sec.appendChild(list); results.appendChild(sec);
@@ -204,7 +205,9 @@
       allItems=append?[...allItems,...newItems]:newItems;
 
       const total=data.total_results||allItems.length;
-      countEl.textContent=`${total.toLocaleString()} result${total!==1?'s':''} for "${query}"`;
+      countEl.textContent = total===1
+        ? App.t('search.resultOne', { n: total.toLocaleString(), q: query })
+        : App.t('search.resultMany', { n: total.toLocaleString(), q: query });
 
       // Update tab counts
       document.getElementById('cnt-all').textContent   = allItems.length;
@@ -217,7 +220,7 @@
       lmWrap.classList.toggle('hidden', page>=totalPages);
     } catch {
       spinner.classList.add('hidden');
-      results.innerHTML='<p class="error-msg">Search failed. Please try again.</p>';
+      results.innerHTML=`<p class="error-msg">${App.t('search.failed')}</p>`;
       results.classList.remove('hidden');
     }
     loading=false; lmBtn.disabled=false;
@@ -238,8 +241,8 @@
   if (query) { fetchPage(); }
   else {
     spinner.classList.add('hidden'); results.classList.remove('hidden');
-    results.innerHTML='<div class="empty-state"><h3>Search TMDB</h3><p>Use the search bar above to find movies, TV shows, and people.</p></div>';
-    countEl.textContent='Enter a query to get started';
+    results.innerHTML=`<div class="empty-state"><h3>${App.t('search.searchTmdb')}</h3><p>${App.t('search.useBar')}</p></div>`;
+    countEl.textContent=App.t('search.enterQuery');
   }
 </script>
 </body>

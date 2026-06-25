@@ -15,6 +15,8 @@
   const cfg = window.MOVIEZDB_CONFIG || {};
   if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
 
+  const t = (k, v) => (window.App && window.App.t) ? window.App.t(k, v) : k;
+
   let sb = null;
   let user = null;
   const listeners = [];
@@ -36,7 +38,7 @@
       // Mirror the Supabase profile into the existing local nav profile UI.
       try {
         const { data: p } = await sb.from('profiles').select('display_name,avatar_emoji').eq('id', u.id).maybeSingle();
-        const name = p?.display_name || (u.email || 'Movie Fan').split('@')[0];
+        const name = p?.display_name || (u.email || t('profile.defaultName')).split('@')[0];
         window.App?.Store?.setProfile({ name, initials: name.slice(0, 2).toUpperCase() });
       } catch {}
     }
@@ -62,7 +64,7 @@
     },
     async signOut() {
       await sb.auth.signOut();
-      window.App?.Store?.setProfile({ name: 'Movie Fan', initials: 'MF' });
+      window.App?.Store?.setProfile({ name: t('profile.defaultName'), initials: '' });
       window.App?.Profile?.refresh?.();
     },
     async updateProfile({ display_name }) {
@@ -81,7 +83,7 @@
     const { data } = await sb.from('profiles').select('id,display_name,avatar_emoji').in('id', ids);
     const map = {};
     (data || []).forEach(p => { map[p.id] = p; });
-    return rows.map(r => ({ ...r, profile: map[r.user_id] || { display_name: 'Movie Fan', avatar_emoji: '🎬' } }));
+    return rows.map(r => ({ ...r, profile: map[r.user_id] || { display_name: t('profile.defaultName'), avatar_emoji: '🎬' } }));
   }
 
   /* ── SOCIAL DATA API (used by details.html) ── */
@@ -157,53 +159,53 @@
     if (user) {
       const name = (window.App?.Store?.getProfile?.().name) || (user.email || '').split('@')[0];
       body.innerHTML = `
-        <h2 class="auth-title">Your Account</h2>
+        <h2 class="auth-title">${t('auth.yourAccount')}</h2>
         <p class="auth-sub">${esc(user.email || '')}</p>
-        <label class="auth-label">Display name</label>
+        <label class="auth-label">${t('auth.displayName')}</label>
         <input class="auth-input" id="auth-name" maxlength="40" value="${esc(name)}">
         <div class="auth-err" id="auth-err"></div>
-        <button class="auth-btn" id="auth-save">Save profile</button>
-        <button class="auth-btn auth-btn-ghost" id="auth-logout">Log out</button>`;
+        <button class="auth-btn" id="auth-save">${t('auth.saveProfile')}</button>
+        <button class="auth-btn auth-btn-ghost" id="auth-logout">${t('auth.logout')}</button>`;
       body.querySelector('#auth-save').addEventListener('click', async () => {
         const dn = body.querySelector('#auth-name').value.trim();
         if (!dn) return;
-        try { await Auth.updateProfile({ display_name: dn }); window.App?.Toast?.show('Profile updated', '✏️'); closeModal(); }
+        try { await Auth.updateProfile({ display_name: dn }); window.App?.Toast?.show(t('toast.profileUpdated'), '✏️'); closeModal(); }
         catch (e) { showErr(e.message); }
       });
-      body.querySelector('#auth-logout').addEventListener('click', async () => { await Auth.signOut(); closeModal(); window.App?.Toast?.show('Logged out', '👋'); });
+      body.querySelector('#auth-logout').addEventListener('click', async () => { await Auth.signOut(); closeModal(); window.App?.Toast?.show(t('toast.loggedOut'), '👋'); });
       return;
     }
 
     const signup = mode === 'signup';
     body.innerHTML = `
       <div class="auth-tabs">
-        <button class="auth-tab ${!signup ? 'active' : ''}" data-mode="login">Log In</button>
-        <button class="auth-tab ${signup ? 'active' : ''}" data-mode="signup">Sign Up</button>
+        <button class="auth-tab ${!signup ? 'active' : ''}" data-mode="login">${t('auth.login')}</button>
+        <button class="auth-tab ${signup ? 'active' : ''}" data-mode="signup">${t('auth.signup')}</button>
       </div>
-      ${signup ? `<label class="auth-label">Display name</label><input class="auth-input" id="auth-dn" maxlength="40" placeholder="Movie Fan">` : ''}
-      <label class="auth-label">Email</label>
+      ${signup ? `<label class="auth-label">${t('auth.displayName')}</label><input class="auth-input" id="auth-dn" maxlength="40" placeholder="${t('profile.defaultName')}">` : ''}
+      <label class="auth-label">${t('auth.email')}</label>
       <input class="auth-input" id="auth-email" type="email" placeholder="you@example.com" autocomplete="email">
-      <label class="auth-label">Password</label>
-      <input class="auth-input" id="auth-pw" type="password" placeholder="${signup ? 'At least 6 characters' : 'Your password'}" autocomplete="${signup ? 'new-password' : 'current-password'}">
+      <label class="auth-label">${t('auth.password')}</label>
+      <input class="auth-input" id="auth-pw" type="password" placeholder="${signup ? t('auth.pwHintSignup') : t('auth.pwHintLogin')}" autocomplete="${signup ? 'new-password' : 'current-password'}">
       <div class="auth-err" id="auth-err"></div>
-      <button class="auth-btn" id="auth-go">${signup ? 'Create account' : 'Log in'}</button>`;
-    body.querySelectorAll('.auth-tab').forEach(t => t.addEventListener('click', () => renderModal(t.dataset.mode)));
+      <button class="auth-btn" id="auth-go">${signup ? t('auth.createAccount') : t('auth.login')}</button>`;
+    body.querySelectorAll('.auth-tab').forEach(tab => tab.addEventListener('click', () => renderModal(tab.dataset.mode)));
     body.querySelector('#auth-go').addEventListener('click', async () => {
       const email = body.querySelector('#auth-email').value.trim();
       const pw = body.querySelector('#auth-pw').value;
       const dn = body.querySelector('#auth-dn')?.value.trim();
-      if (!email || !pw) return showErr('Enter your email and password.');
+      if (!email || !pw) return showErr(t('auth.enterBoth'));
       const btn = body.querySelector('#auth-go'); btn.disabled = true; btn.textContent = '…';
       try {
         if (signup) {
           await Auth.signUp(email, pw, dn);
-          window.App?.Toast?.show('Account created — you may need to confirm your email', '🎬');
+          window.App?.Toast?.show(t('toast.accountCreated'), '🎬');
         } else {
           await Auth.signIn(email, pw);
-          window.App?.Toast?.show('Welcome back!', '🍿');
+          window.App?.Toast?.show(t('toast.welcomeBack'), '🍿');
         }
         closeModal();
-      } catch (e) { showErr(e.message); btn.disabled = false; btn.textContent = signup ? 'Create account' : 'Log in'; }
+      } catch (e) { showErr(e.message); btn.disabled = false; btn.textContent = signup ? t('auth.createAccount') : t('auth.login'); }
     });
   }
   function showErr(msg) { const el = modal?.querySelector('#auth-err'); if (el) el.textContent = msg; }
@@ -218,8 +220,8 @@
     item.className = 'pd-link';
     item.dataset.social = 'account';
     item.innerHTML = user
-      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Account &amp; Profile`
-      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign In / Sign Up`;
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${t('auth.accountProfile')}`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> ${t('auth.signInUp')}`;
     item.addEventListener('click', openModal);
     links.insertBefore(item, links.firstChild);
   }

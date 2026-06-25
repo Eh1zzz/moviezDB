@@ -29,12 +29,16 @@
   const IMG_SM  = 'https://image.tmdb.org/t/p/w92';
   const IMG_W5  = 'https://image.tmdb.org/t/p/w500';
 
+  // i18n shortcut — i18n.js loads before this file and defines App.t. Falls back
+  // to the raw key if i18n is somehow absent so the UI never shows blanks.
+  const t = (k, v) => (window.App && window.App.t) ? window.App.t(k, v) : k;
+
   /* ── STORAGE ──────────────────────────── */
   const Store = {
     _get(k, d)   { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
     _set(k, v)   { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 
-    getProfile()   { return this._get('tmdb_profile',   { name: 'Movie Fan', initials: 'MF' }); },
+    getProfile()   { return this._get('tmdb_profile',   { name: t('profile.defaultName'), initials: '' }); },
     setProfile(p)  { this._set('tmdb_profile', p); },
     getWatchlist() { return this._get('tmdb_watchlist', []); },
     getFavorites() { return this._get('tmdb_favorites', []); },
@@ -91,14 +95,14 @@
       e.preventDefault(); e.stopPropagation();
       const added = Store.toggleFavorite(meta());
       fa.classList.toggle('active-fav', added);
-      Toast.show(added ? 'Added to Favourites' : 'Removed from Favourites', added ? '♥' : '💔');
+      Toast.show(added ? t('toast.addedFav') : t('toast.removedFav'), added ? '♥' : '💔');
       window.App?.Profile?.refresh();
     });
     wa.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
       const added = Store.toggleWatchlist(meta());
       wa.classList.toggle('active-watch', added);
-      Toast.show(added ? 'Added to Watchlist' : 'Removed from Watchlist', added ? '🔖' : '📋');
+      Toast.show(added ? t('toast.addedWatch') : t('toast.removedWatch'), added ? '🔖' : '📋');
       window.App?.Profile?.refresh();
     });
 
@@ -142,7 +146,7 @@
       this.clearBtn.classList.toggle('show', q.length > 0);
       clearTimeout(this.timer);
       if (!q) { this.close(); return; }
-      this.dropdown.innerHTML = '<div class="dd-searching">Searching…</div>';
+      this.dropdown.innerHTML = `<div class="dd-searching">${t('dd.searching')}</div>`;
       this.dropdown.classList.add('open');
       this.timer = setTimeout(() => this._fetch(q), 310);
     },
@@ -158,26 +162,26 @@
           .slice(0, 9);
         this._render(q);
       } catch {
-        this.dropdown.innerHTML = '<div class="dd-empty">Search unavailable.</div>';
+        this.dropdown.innerHTML = `<div class="dd-empty">${t('dd.unavailable')}</div>`;
       }
     },
 
     _render(q) {
       if (!this.items.length) {
-        this.dropdown.innerHTML = `<div class="dd-empty">No results for "<strong>${q}</strong>"</div>`;
+        this.dropdown.innerHTML = `<div class="dd-empty">${t('dd.noResultsFor', { q })}</div>`;
         return;
       }
       const groups = { movie: [], tv: [], person: [] };
       this.items.forEach(x => { if (groups[x.media_type]) groups[x.media_type].push(x); });
 
-      const labels = { movie: 'Movies', tv: 'TV Series', person: 'People' };
+      const labels = { movie: t('dd.movies'), tv: t('dd.tvSeries'), person: t('dd.people') };
       let html = '';
       Object.entries(groups).forEach(([type, arr]) => {
         if (!arr.length) return;
         html += `<div class="dd-section-label">${labels[type]}</div>`;
         html += arr.map(x => this._item(x, type)).join('');
       });
-      html += `<a href="search.html?q=${encodeURIComponent(q)}" class="dd-see-all">See all results →</a>`;
+      html += `<a href="search.html?q=${encodeURIComponent(q)}" class="dd-see-all">${t('dd.seeAll')}</a>`;
       this.dropdown.innerHTML = html;
       this.idx = -1;
 
@@ -200,7 +204,7 @@
       const href   = type === 'person' ? `person.html?personId=${r.id}`
                    : type === 'movie'  ? `details.html?movieId=${r.id}`
                    : `details.html?seriesId=${r.id}`;
-      const badge  = `<span class="dd-type dd-type-${type}">${type === 'person' ? 'Person' : type === 'movie' ? 'Movie' : 'TV'}</span>`;
+      const badge  = `<span class="dd-type dd-type-${type}">${type === 'person' ? t('dd.typePerson') : type === 'movie' ? t('dd.typeMovie') : t('dd.typeTv')}</span>`;
       const meta   = type === 'person' ? dept : [year, rating].filter(Boolean).join(' · ');
       return `
         <a href="${href}" class="dd-item">
@@ -296,12 +300,12 @@
       const initials = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
       Store.setProfile({ name, initials });
       this.refresh(); this._closeEdit();
-      Toast.show(`Name updated to "${name}"`, '✏️');
+      Toast.show(t('toast.nameUpdated', { name }), '✏️');
     },
     _clearAll() {
-      if (!confirm('Clear all watchlist and favourites data?')) return;
+      if (!confirm(t('confirm.clearAllData'))) return;
       Store.clearWatchlist(); Store.clearFavorites();
-      this.refresh(); Toast.show('All data cleared', '🗑️');
+      this.refresh(); Toast.show(t('toast.allCleared'), '🗑️');
     },
   };
 
@@ -326,10 +330,10 @@
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('tmdb_theme', next);
       document.querySelectorAll('.theme-toggle').forEach(btn => {
-        btn.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-        btn.setAttribute('title',      next === 'dark' ? 'Light mode' : 'Dark mode');
+        btn.setAttribute('aria-label', next === 'dark' ? t('theme.light') : t('theme.dark'));
+        btn.setAttribute('title',      next === 'dark' ? t('theme.light') : t('theme.dark'));
       });
-      Toast.show(next === 'light' ? 'Light mode' : 'Dark mode', next === 'light' ? '☀️' : '🌙', 1800);
+      Toast.show(next === 'light' ? t('theme.light') : t('theme.dark'), next === 'light' ? '☀️' : '🌙', 1800);
     },
     init() {
       document.addEventListener('click', e => {
@@ -417,7 +421,7 @@
   const Trailer = {
     /** @param {object} opts - { title, youtubeKey } */
     open({ title, youtubeKey } = {}) {
-      if (!youtubeKey) { Toast.show('No trailer available for this title', '🎬'); return; }
+      if (!youtubeKey) { Toast.show(t('toast.noTrailer'), '🎬'); return; }
 
       let modal = document.getElementById('trailer-modal');
       if (!modal) {
@@ -468,8 +472,8 @@
       <a href="index.html" class="nav-logo" aria-label="MoviezDB Home">MoviezDB</a>
 
       <div class="nav-links" id="nav-links" role="navigation" aria-label="Main">
-        <a href="index.html"  class="${activePage==='movies' ?'nav-active':''}">Movies</a>
-        <a href="series.html" class="${activePage==='series' ?'nav-active':''}">TV Series</a>
+        <a href="index.html"  class="${activePage==='movies' ?'nav-active':''}">${t('nav.movies')}</a>
+        <a href="series.html" class="${activePage==='series' ?'nav-active':''}">${t('nav.series')}</a>
       </div>
 
       <!-- Search -->
@@ -480,8 +484,8 @@
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </span>
-          <input id="nav-search-input" class="nav-search-input" type="search" placeholder="Search movies, shows, people…"
-                 autocomplete="off" spellcheck="false" aria-label="Search">
+          <input id="nav-search-input" class="nav-search-input" type="search" placeholder="${t('nav.searchPh')}"
+                 autocomplete="off" spellcheck="false" aria-label="${t('nav.searchPh')}">
           <span class="nav-search-kbd" aria-hidden="true">⌘K</span>
           <button class="nav-search-clear" aria-label="Clear" tabindex="-1">×</button>
         </div>
@@ -492,8 +496,8 @@
       <div class="nav-actions">
         <!-- Theme toggle -->
         <button class="theme-toggle"
-                aria-label="${Theme.current() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}"
-                title="${Theme.current() === 'dark' ? 'Light mode' : 'Dark mode'}">
+                aria-label="${Theme.current() === 'dark' ? t('theme.light') : t('theme.dark')}"
+                title="${Theme.current() === 'dark' ? t('theme.light') : t('theme.dark')}">
           <svg class="tt-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg class="tt-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         </button>
@@ -511,50 +515,50 @@
         <div style="position:relative">
           <button class="profile-btn" id="profile-btn" aria-haspopup="true" aria-label="Profile menu">
             <div class="profile-avatar" aria-hidden="true">MF</div>
-            <span class="profile-label">Movie Fan</span>
+            <span class="profile-label">${t('profile.defaultName')}</span>
             <span class="profile-caret" aria-hidden="true">▾</span>
           </button>
           <div class="profile-dropdown" id="profile-dropdown" role="dialog" aria-label="Profile">
             <div class="pd-head">
               <div class="pd-avatar-lg" aria-hidden="true">MF</div>
               <div>
-                <div class="pd-name">Movie Fan</div>
-                <div class="pd-sub">Local · TMDB</div>
+                <div class="pd-name">${t('profile.defaultName')}</div>
+                <div class="pd-sub">${t('profile.localTmdb')}</div>
               </div>
             </div>
             <div class="pd-stats">
               <div class="pd-stat">
                 <div class="pd-stat-n" data-stat="w">0</div>
-                <div class="pd-stat-l">Watchlist</div>
+                <div class="pd-stat-l">${t('profile.watchlist')}</div>
               </div>
               <div class="pd-stat">
                 <div class="pd-stat-n" data-stat="f">0</div>
-                <div class="pd-stat-l">Favourites</div>
+                <div class="pd-stat-l">${t('profile.favourites')}</div>
               </div>
             </div>
             <div class="pd-links">
               <div class="pd-link" data-pd="watchlist">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                My Watchlist
+                ${t('profile.myWatchlist')}
               </div>
               <div class="pd-link" data-pd="favorites">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                My Favourites
+                ${t('profile.myFavourites')}
               </div>
               <div class="pd-link" data-pd="edit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Edit Display Name
+                ${t('profile.editName')}
               </div>
               <div class="pd-link danger" data-pd="clear">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                Clear All Data
+                ${t('profile.clearData')}
               </div>
             </div>
             <div class="pd-edit">
-              <input class="pd-edit-input" type="text" placeholder="Your display name" maxlength="28">
+              <input class="pd-edit-input" type="text" placeholder="${t('profile.namePh')}" maxlength="28">
               <div class="pd-edit-row">
-                <button class="pd-edit-save">Save</button>
-                <button class="pd-edit-cancel">Cancel</button>
+                <button class="pd-edit-save">${t('profile.save')}</button>
+                <button class="pd-edit-cancel">${t('profile.cancel')}</button>
               </div>
             </div>
           </div>
@@ -592,7 +596,8 @@
   }
 
   /* ── EXPOSE ───────────────────────────── */
-  window.App = { buildNav, Store, Toast, Profile, Theme, Lang, Trailer, injectCardActions };
+  // Merge (not replace) — i18n.js ran first and put App.I18n / App.t on window.App.
+  window.App = Object.assign(window.App || {}, { buildNav, Store, Toast, Profile, Theme, Lang, Trailer, injectCardActions });
 
 })();
 

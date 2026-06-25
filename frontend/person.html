@@ -49,10 +49,11 @@
 <div id="main-content" class="hidden"></div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
-  document.documentElement.lang = App.Lang.current();
+  App.I18n.apply();
   const API_KEY  = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG      = 'https://image.tmdb.org/t/p/w500';
   const spinner  = document.getElementById('spinner-container');
@@ -64,7 +65,7 @@
 
   function cardHtml(c, role) {
     const img  = c.poster_path ? `${IMG}${c.poster_path}` : '';
-    const t    = c.title||c.name||'Untitled';
+    const t    = c.title||c.name||App.t('common.untitled');
     const yr   = (c.release_date||c.first_air_date||'').slice(0,4);
     const rat  = c.vote_average ? c.vote_average.toFixed(1) : null;
     const href = c.media_type==='tv' ? `details.html?seriesId=${c.id}` : `details.html?movieId=${c.id}`;
@@ -84,19 +85,19 @@
       <div class="section-title">${title} <span class="section-count">${list.length}</span></div>
       <div class="movie-grid">${init.map(c=>cardHtml(c,c[roleKey]||'—')).join('')}</div>
       ${extra.length?`<div id="extra-${id}" class="extra-grid hidden">${extra.map(c=>cardHtml(c,c[roleKey]||'—')).join('')}</div>
-        <button class="toggle-btn" data-target="${id}">Show more</button>`:''}
+        <button class="toggle-btn" data-target="${id}">${App.t('common.showMore')}</button>`:''}
     </div>`;
   }
 
   if (!personId) {
     spinner.classList.add('hidden'); mc.classList.remove('hidden');
-    mc.innerHTML='<p class="error-msg">Error: No person ID provided.</p>';
+    mc.innerHTML=`<p class="error-msg">${App.t('person.errNoId')}</p>`;
   } else {
     fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${API_KEY}&language=${App.Lang.getApiParam()}&append_to_response=combined_credits`,
       {headers:{accept:'application/json'}})
     .then(r=>r.json()).then(person=>{
       spinner.classList.add('hidden'); mc.classList.remove('hidden');
-      const name  = person.name||'Unknown Person';
+      const name  = person.name||App.t('person.unknownPerson');
       const photo = person.profile_path ? `${IMG}${person.profile_path}` : avatar(name);
       document.title = `${name} — TMDB`;
 
@@ -119,8 +120,8 @@
       })() : null;
 
       const bio = person.biography||'';
-      const castSec = section('cast','Acting',castCredits,'character');
-      const crewSec = section('crew','Crew',crewCredits,'job');
+      const castSec = section('cast',App.t('person.acting'),castCredits,'character');
+      const crewSec = section('crew',App.t('details.crew'),crewCredits,'job');
 
       mc.innerHTML = `
         <div class="profile-hero">
@@ -128,21 +129,21 @@
           <div class="profile-info">
             <h1 class="profile-name">${name}</h1>
             <div class="stats-row">
-              ${person.known_for_department?`<div class="stat"><span class="stat-label">Known For</span><span class="stat-value gold">${person.known_for_department}</span></div>`:''}
-              ${person.birthday?`<div class="stat"><span class="stat-label">Born</span><span class="stat-value">${person.birthday}</span></div>`:''}
-              ${age!==null?`<div class="stat"><span class="stat-label">${person.deathday?'Age at Death':'Age'}</span><span class="stat-value">${age}</span></div>`:''}
-              ${person.deathday?`<div class="stat"><span class="stat-label">Died</span><span class="stat-value">${person.deathday}</span></div>`:''}
-              ${person.place_of_birth?`<div class="stat"><span class="stat-label">Birthplace</span><span class="stat-value">${person.place_of_birth}</span></div>`:''}
-              ${person.popularity?`<div class="stat"><span class="stat-label">Popularity</span><span class="stat-value">${Math.round(person.popularity)}</span></div>`:''}
+              ${person.known_for_department?`<div class="stat"><span class="stat-label">${App.t('person.knownFor')}</span><span class="stat-value gold">${person.known_for_department}</span></div>`:''}
+              ${person.birthday?`<div class="stat"><span class="stat-label">${App.t('person.born')}</span><span class="stat-value">${person.birthday}</span></div>`:''}
+              ${age!==null?`<div class="stat"><span class="stat-label">${person.deathday?App.t('person.ageAtDeath'):App.t('person.age')}</span><span class="stat-value">${age}</span></div>`:''}
+              ${person.deathday?`<div class="stat"><span class="stat-label">${App.t('person.died')}</span><span class="stat-value">${person.deathday}</span></div>`:''}
+              ${person.place_of_birth?`<div class="stat"><span class="stat-label">${App.t('person.birthplace')}</span><span class="stat-value">${person.place_of_birth}</span></div>`:''}
+              ${person.popularity?`<div class="stat"><span class="stat-label">${App.t('stat.popularity')}</span><span class="stat-value">${Math.round(person.popularity)}</span></div>`:''}
             </div>
-            ${bio?`<div class="bio-label">Biography</div>
+            ${bio?`<div class="bio-label">${App.t('person.biography')}</div>
               <div class="bio-text" id="bio-text">${bio.replace(/\n\n/g,'<br><br>')}</div>
-              <button class="bio-toggle" id="bio-toggle">Read more</button>`
-              :`<div class="bio-label">Biography</div><p style="color:var(--muted);font-size:.88rem">No biography available.</p>`}
+              <button class="bio-toggle" id="bio-toggle">${App.t('common.readMore')}</button>`
+              :`<div class="bio-label">${App.t('person.biography')}</div><p style="color:var(--muted);font-size:.88rem">${App.t('person.noBio')}</p>`}
           </div>
         </div>
         <div class="main">
-          ${castSec||crewSec ? castSec+crewSec : '<p class="empty-msg">No filmography available.</p>'}
+          ${castSec||crewSec ? castSec+crewSec : `<p class="empty-msg">${App.t('person.noFilmography')}</p>`}
         </div>`;
 
       const bioText  = document.getElementById('bio-text');
@@ -153,18 +154,18 @@
         }
         bioToggle.addEventListener('click',()=>{
           const exp=bioText.classList.toggle('expanded');
-          bioToggle.textContent=exp?'Read less':'Read more';
+          bioToggle.textContent=exp?App.t('common.readLess'):App.t('common.readMore');
         });
       }
       document.querySelectorAll('.toggle-btn').forEach(btn=>{
         btn.addEventListener('click',()=>{
           const el=document.getElementById(`extra-${btn.dataset.target}`);
-          btn.textContent=el.classList.toggle('hidden')?'Show more':'Show less';
+          btn.textContent=el.classList.toggle('hidden')?App.t('common.showMore'):App.t('common.showLess');
         });
       });
     }).catch(err=>{
       spinner.classList.add('hidden'); mc.classList.remove('hidden');
-      mc.innerHTML='<p class="error-msg">Failed to load person details.</p>';
+      mc.innerHTML=`<p class="error-msg">${App.t('person.failed')}</p>`;
       console.error(err);
     });
   }

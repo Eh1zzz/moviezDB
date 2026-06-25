@@ -47,10 +47,11 @@
 <div class="grid-wrap hidden" id="grid-wrap"><div class="grid" id="container"></div></div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
-  document.documentElement.lang = App.Lang.current();
+  App.I18n.apply();
   const API_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG     = 'https://image.tmdb.org/t/p/w500';
   const spinner = document.getElementById('spinner-container');
@@ -61,20 +62,20 @@
   const genreName=params.get('genreName');
 
   if (genreName) {
-    document.getElementById('genre-title').innerHTML = `<span>${genreName.toUpperCase()}</span> MOVIES`;
+    document.getElementById('genre-title').innerHTML = `<span>${genreName.toUpperCase()}</span> ${App.t('genre.moviesWord')}`;
     document.title = `${genreName} — TMDB`;
   }
 
   if (!genreId) {
     spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
-    container.innerHTML = '<p class="error-msg">Error: No genre ID provided.</p>';
+    container.innerHTML = `<p class="error-msg">${App.t('genre.errNoId')}</p>`;
   } else {
     fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&language=${App.Lang.getApiParam()}`,
       {headers:{accept:'application/json'}})
     .then(r=>r.json()).then(data=>{
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
       const results = data.results||[];
-      if (!results.length) { container.innerHTML='<p class="error-msg">No movies found.</p>'; return; }
+      if (!results.length) { container.innerHTML=`<p class="error-msg">${App.t('genre.noMovies')}</p>`; return; }
       results.forEach(m => {
         const a = document.createElement('a');
         a.href = `details.html?movieId=${m.id}`;
@@ -83,7 +84,7 @@
           <img src="${m.poster_path?IMG+m.poster_path:''}" alt="${m.title||''}" loading="lazy">
           <div class="card-badge">★ ${m.vote_average?.toFixed(1)||'N/A'}</div>
           <div class="card-body">
-            <div class="card-title">${m.title||'Untitled'}</div>
+            <div class="card-title">${m.title||App.t('common.untitled')}</div>
             <div class="card-meta">${m.release_date?.slice(0,4)||'—'}</div>
           </div>`;
         App.injectCardActions(a, m.id, 'movie', ()=>m.title||'');
@@ -91,7 +92,7 @@
       });
     }).catch(()=>{
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
-      container.innerHTML='<p class="error-msg">Failed to load genre movies.</p>';
+      container.innerHTML=`<p class="error-msg">${App.t('genre.failed')}</p>`;
     });
   }
 </script>

@@ -91,18 +91,18 @@
 <div class="lists-page">
   <div class="list-tabs">
     <button class="l-tab active" data-panel="watchlist">
-      Watchlist <span class="l-tab-count" id="wl-count">0</span>
+      <span data-i18n="profile.watchlist">Watchlist</span> <span class="l-tab-count" id="wl-count">0</span>
     </button>
     <button class="l-tab" data-panel="favorites">
-      Favourites <span class="l-tab-count" id="fv-count">0</span>
+      <span data-i18n="profile.favourites">Favourites</span> <span class="l-tab-count" id="fv-count">0</span>
     </button>
   </div>
 
   <!-- Watchlist panel -->
   <div class="list-panel active" id="panel-watchlist">
     <div class="panel-header">
-      <h2 class="panel-title">MY <em>WATCHLIST</em></h2>
-      <button class="clear-btn" id="clear-wl">Clear All</button>
+      <h2 class="panel-title" data-i18n-html="wl.myWatchlist">MY <em>WATCHLIST</em></h2>
+      <button class="clear-btn" id="clear-wl" data-i18n="common.clearAll">Clear All</button>
     </div>
     <div class="items-grid" id="wl-grid"></div>
   </div>
@@ -110,18 +110,19 @@
   <!-- Favourites panel -->
   <div class="list-panel" id="panel-favorites">
     <div class="panel-header">
-      <h2 class="panel-title">MY <em>FAVOURITES</em></h2>
-      <button class="clear-btn" id="clear-fv">Clear All</button>
+      <h2 class="panel-title" data-i18n-html="wl.myFavourites">MY <em>FAVOURITES</em></h2>
+      <button class="clear-btn" id="clear-fv" data-i18n="common.clearAll">Clear All</button>
     </div>
     <div class="items-grid" id="fv-grid"></div>
   </div>
 </div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
-  document.documentElement.lang = App.Lang.current();
+  App.I18n.apply();
   const Store = App.Store;
   const Toast = App.Toast;
 
@@ -140,9 +141,9 @@
     if (!items.length) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
         <span class="es-icon">${isWl?'🔖':'♥'}</span>
-        <h3>Nothing Here Yet</h3>
-        <p>${isWl?'Save movies and TV shows to keep track of what you want to watch.':'Heart content you love to save it here.'}</p>
-        <a href="index.html">Browse Movies →</a>
+        <h3>${App.t('wl.nothingHere')}</h3>
+        <p>${isWl?App.t('wl.watchlistEmpty'):App.t('wl.favouritesEmpty')}</p>
+        <a href="index.html">${App.t('wl.browseMovies')}</a>
       </div>`;
       return;
     }
@@ -152,16 +153,16 @@
       const card = document.createElement('div');
       card.className = 'item-card';
       const href  = item.type==='movie' ? `details.html?movieId=${item.id}` : `details.html?seriesId=${item.id}`;
-      const label = item.type==='movie' ? 'Movie' : 'TV';
+      const label = item.type==='movie' ? App.t('common.movie') : App.t('common.tv');
       card.innerHTML = `
         <a href="${href}">
           <img src="${item.poster||''}" alt="${item.title||''}" loading="lazy"
             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(item.title||'?')}&background=1a1a24&color=7a7a8c&size=300'">
           <div class="item-type-badge ${item.type}">${label}</div>
         </a>
-        <button class="item-remove" title="Remove" aria-label="Remove ${item.title||''}">×</button>
+        <button class="item-remove" title="${App.t('common.remove')}" aria-label="${App.t('common.remove')} ${item.title||''}">×</button>
         <div class="item-body">
-          <div class="item-title">${item.title||'Untitled'}</div>
+          <div class="item-title">${item.title||App.t('common.untitled')}</div>
           <div class="item-sub">${label}</div>
         </div>`;
 
@@ -169,7 +170,7 @@
         e.preventDefault();
         if (listKey==='watchlist') Store.toggleWatchlist({ id:item.id, type:item.type });
         else Store.toggleFavorite({ id:item.id, type:item.type });
-        Toast.show(`Removed from ${isWl?'Watchlist':'Favourites'}`, '🗑️');
+        Toast.show(isWl?App.t('toast.removedWatch'):App.t('toast.removedFav'), '🗑️');
         refreshAll();
         App.Profile.refresh();
       });
@@ -199,14 +200,14 @@
   });
 
   document.getElementById('clear-wl').addEventListener('click', () => {
-    if (!confirm('Clear your entire watchlist?')) return;
+    if (!confirm(App.t('confirm.clearWatchlist'))) return;
     Store.clearWatchlist(); refreshAll(); App.Profile.refresh();
-    Toast.show('Watchlist cleared','🗑️');
+    Toast.show(App.t('toast.watchlistCleared'),'🗑️');
   });
   document.getElementById('clear-fv').addEventListener('click', () => {
-    if (!confirm('Clear all your favourites?')) return;
+    if (!confirm(App.t('confirm.clearFavourites'))) return;
     Store.clearFavorites(); refreshAll(); App.Profile.refresh();
-    Toast.show('Favourites cleared','🗑️');
+    Toast.show(App.t('toast.favouritesCleared'),'🗑️');
   });
 
   refreshAll();

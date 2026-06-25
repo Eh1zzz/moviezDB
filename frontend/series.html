@@ -69,30 +69,31 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title" id="page-title">TRENDING <span>TV SERIES</span></div>
+    <div class="page-title" id="page-title" data-i18n-html="title.trendingSeries">TRENDING <span>TV SERIES</span></div>
     <div class="page-meta" id="page-meta"></div>
   </div>
   <select class="sort-select" id="sort-select" aria-label="Sort by">
-    <option value="trending">🔥 Trending Today</option>
-    <option value="popular">📈 Most Popular</option>
-    <option value="top_rated">⭐ Top Rated</option>
-    <option value="on_air">📺 On The Air</option>
-    <option value="airing_today">🆕 Airing Today</option>
+    <option value="trending"     data-i18n="sort.trendingToday">🔥 Trending Today</option>
+    <option value="popular"      data-i18n="sort.mostPopular">📈 Most Popular</option>
+    <option value="top_rated"    data-i18n="sort.topRated">⭐ Top Rated</option>
+    <option value="on_air"       data-i18n="sort.onAir">📺 On The Air</option>
+    <option value="airing_today" data-i18n="sort.airingToday">🆕 Airing Today</option>
   </select>
 </div>
 
 <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
 <div class="grid-wrap hidden" id="grid-wrap"><div class="grid" id="container"></div></div>
 <div class="load-more-wrap hidden" id="lm-wrap">
-  <button class="load-more-btn" id="lm-btn">Load More</button>
+  <button class="load-more-btn" id="lm-btn" data-i18n="common.loadMore">Load More</button>
   <div class="page-pill" id="page-pill"></div>
 </div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('series');
-  document.documentElement.lang = App.Lang.current();
+  App.I18n.apply();
 
   const API_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG = 'https://image.tmdb.org/t/p/w500';
@@ -104,7 +105,7 @@
     on_air:       p=>`https://api.themoviedb.org/3/tv/on_the_air?language=${lang()}&page=${p}`,
     airing_today: p=>`https://api.themoviedb.org/3/tv/airing_today?language=${lang()}&page=${p}`,
   };
-  const TITLES = { trending:'TRENDING <span>TV SERIES</span>', popular:'POPULAR <span>TV SERIES</span>', top_rated:'TOP <span>RATED</span>', on_air:'ON THE <span>AIR</span>', airing_today:'AIRING <span>TODAY</span>' };
+  const TITLES = { trending:App.t('title.trendingSeries'), popular:App.t('title.popularSeries'), top_rated:App.t('title.topRated'), on_air:App.t('title.onTheAir'), airing_today:App.t('title.airingToday') };
 
   const spinner=document.getElementById('spinner-container'), gridWrap=document.getElementById('grid-wrap'),
         container=document.getElementById('container'), lmWrap=document.getElementById('lm-wrap'),
@@ -120,7 +121,7 @@
       <img src="${s.poster_path?IMG+s.poster_path:''}" alt="${s.name||''}" loading="lazy">
       <div class="card-badge">★ ${s.vote_average?.toFixed(1)||'N/A'}</div>
       <div class="card-body">
-        <div class="card-title">${s.name||s.original_name||'No Title'}</div>
+        <div class="card-title">${s.name||s.original_name||App.t('common.noTitle')}</div>
         <div class="card-meta">${s.first_air_date?.slice(0,4)||'—'}</div>
       </div>`;
     App.injectCardActions(a, s.id, 'tv', () => s.name||'');
@@ -136,12 +137,12 @@
       totalPages=Math.min(data.total_pages||1,500); page=p;
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
       (data.results||[]).forEach(s=>container.appendChild(makeCard(s)));
-      pageMeta.textContent=`Page ${page} of ${totalPages}`;
-      pagePill.textContent=`Page ${page} / ${totalPages}`;
+      pageMeta.textContent=App.t('pager.pageOf', { p: page, t: totalPages });
+      pagePill.textContent=App.t('pager.pageSlash', { p: page, t: totalPages });
       lmWrap.classList.toggle('hidden', page>=totalPages);
     } catch {
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
-      container.innerHTML='<p class="error-msg" style="grid-column:1/-1">Failed to load.</p>';
+      container.innerHTML=`<p class="error-msg" style="grid-column:1/-1">${App.t('common.failedLoadShort')}</p>`;
     }
     loading=false; lmBtn.disabled=false;
   }

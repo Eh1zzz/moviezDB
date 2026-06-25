@@ -75,31 +75,32 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">TRENDING <span>MOVIES</span></div>
+    <div class="page-title" data-i18n-html="title.trendingMovies">TRENDING <span>MOVIES</span></div>
     <div class="page-meta" id="page-meta"></div>
   </div>
   <select class="sort-select" id="sort-select" aria-label="Sort by">
-    <option value="trending">🔥 Trending Today</option>
-    <option value="popular">📈 Most Popular</option>
-    <option value="top_rated">⭐ Top Rated</option>
-    <option value="now_playing">🎬 Now Playing</option>
-    <option value="upcoming">📅 Upcoming</option>
+    <option value="trending"   data-i18n="sort.trendingToday">🔥 Trending Today</option>
+    <option value="popular"    data-i18n="sort.mostPopular">📈 Most Popular</option>
+    <option value="top_rated"  data-i18n="sort.topRated">⭐ Top Rated</option>
+    <option value="now_playing" data-i18n="sort.nowPlaying">🎬 Now Playing</option>
+    <option value="upcoming"   data-i18n="sort.upcoming">📅 Upcoming</option>
   </select>
 </div>
 
 <div id="spinner-container" class="spinner-wrap"><div class="spinner"></div></div>
 <div class="grid-wrap hidden" id="grid-wrap"><div class="grid" id="container"></div></div>
 <div class="load-more-wrap hidden" id="lm-wrap">
-  <button class="load-more-btn" id="lm-btn">Load More</button>
+  <button class="load-more-btn" id="lm-btn" data-i18n="common.loadMore">Load More</button>
   <div class="page-pill" id="page-pill"></div>
 </div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('movies');
-  // Sync html[lang] with the selected UI language
-  document.documentElement.lang = App.Lang.current();
+  // Translate static [data-i18n] markup + set <html lang/dir> for the chosen language
+  App.I18n.apply();
 
   const API_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG = 'https://image.tmdb.org/t/p/w500';
@@ -125,12 +126,12 @@
     const a = document.createElement('a');
     a.href = `details.html?movieId=${m.id}`;
     a.className = 'movie-card';
-    a.setAttribute('aria-label', m.title || 'Movie');
+    a.setAttribute('aria-label', m.title || App.t('common.movie'));
     a.innerHTML = `
       <img class="card-img" src="${m.poster_path?IMG+m.poster_path:''}" alt="${m.title||''}" loading="lazy">
       <div class="card-badge">★ ${m.vote_average?.toFixed(1)||'N/A'}</div>
       <div class="card-body">
-        <div class="card-title">${m.title||m.original_title||'No Title'}</div>
+        <div class="card-title">${m.title||m.original_title||App.t('common.noTitle')}</div>
         <div class="card-meta">${m.release_date?.slice(0,4)||'—'}</div>
       </div>`;
     App.injectCardActions(a, m.id, 'movie', () => m.title||'');
@@ -153,13 +154,13 @@
       spinner.classList.add('hidden');
       gridWrap.classList.remove('hidden');
       (data.results||[]).forEach(m => container.appendChild(makeCard(m)));
-      pageMeta.textContent = `Page ${page} of ${totalPages}`;
-      pagePill.textContent = `Page ${page} / ${totalPages}`;
+      pageMeta.textContent = App.t('pager.pageOf', { p: page, t: totalPages });
+      pagePill.textContent = App.t('pager.pageSlash', { p: page, t: totalPages });
       lmWrap.classList.toggle('hidden', page >= totalPages);
     } catch {
       spinner.classList.add('hidden');
       gridWrap.classList.remove('hidden');
-      container.innerHTML = '<p class="error-msg" style="grid-column:1/-1">Failed to load. Please try again.</p>';
+      container.innerHTML = `<p class="error-msg" style="grid-column:1/-1">${App.t('common.failedLoad')}</p>`;
     }
     loading=false; lmBtn.disabled=false;
   }
@@ -168,9 +169,9 @@
   document.getElementById('sort-select').addEventListener('change', e => {
     sort = e.target.value;
     document.querySelector('.page-title').innerHTML = {
-      trending:'TRENDING <span>MOVIES</span>', popular:'POPULAR <span>MOVIES</span>',
-      top_rated:'TOP <span>RATED</span>', now_playing:'NOW <span>PLAYING</span>', upcoming:'UPCOMING <span>MOVIES</span>'
-    }[sort] || 'TRENDING <span>MOVIES</span>';
+      trending:App.t('title.trendingMovies'), popular:App.t('title.popularMovies'),
+      top_rated:App.t('title.topRated'), now_playing:App.t('title.nowPlaying'), upcoming:App.t('title.upcomingMovies')
+    }[sort] || App.t('title.trendingMovies');
     load(1, false);
   });
 

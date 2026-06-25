@@ -194,10 +194,11 @@
 <div id="main-content" class="hidden"></div>
 
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="shared.js"></script>
 <script>
   App.buildNav('');
-  document.documentElement.lang = App.Lang.current();
+  App.I18n.apply();
 
   const API_KEY  = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.TMDB_KEY) || '';
   const IMG      = 'https://image.tmdb.org/t/p/w500';
@@ -233,7 +234,7 @@
       <div class="section-title">${title} <span class="section-count">${list.length}</span></div>
       <div class="people-grid">${init.map(p=>personCard(p,roleKey)).join('')}</div>
       ${extra.length?`<div id="extra-${id}" class="extra-people hidden">${extra.map(p=>personCard(p,roleKey)).join('')}</div>
-        <button class="toggle-btn" data-target="${id}">Show more</button>`:''}
+        <button class="toggle-btn" data-target="${id}">${App.t('common.showMore')}</button>`:''}
     </div>`;
   }
 
@@ -249,9 +250,9 @@
   function similarRow(items, type) {
     if (!items.length) return '';
     return `<div class="section">
-      <div class="section-title">More Like This</div>
+      <div class="section-title">${App.t('details.moreLikeThis')}</div>
       <div class="sim-row">${items.map(x=>{
-        const t   = x.title||x.name||'Unknown';
+        const t   = x.title||x.name||App.t('common.unknown');
         const img = x.poster_path?`${IMG}${x.poster_path}`:'';
         const hr  = type==='movie'?`details.html?movieId=${x.id}`:`details.html?seriesId=${x.id}`;
         const yr  = (x.release_date||x.first_air_date||'').slice(0,4);
@@ -284,7 +285,7 @@
     if (!region || !results[region]) return '';
     const data = results[region];
     const link = data.link || '';
-    const groups = [['flatrate','Stream'], ['rent','Rent'], ['buy','Buy']];
+    const groups = [['flatrate',App.t('details.stream')], ['rent',App.t('details.rent')], ['buy',App.t('details.buy')]];
     let rows = '';
     groups.forEach(([key, label]) => {
       const list = data[key];
@@ -295,9 +296,9 @@
     });
     if (!rows) return '';
     return `<div class="section wtw-section">
-      <div class="section-title">Where to Watch <span class="section-count">${region}</span></div>
+      <div class="section-title">${App.t('details.whereToWatch')} <span class="section-count">${region}</span></div>
       ${rows}
-      <div class="wtw-note">Availability for your region${link ? ` · <a href="${link}" target="_blank" rel="noopener">more options</a>` : ''} · data by JustWatch</div>
+      <div class="wtw-note">${App.t('details.availability')}${link ? ` · <a href="${link}" target="_blank" rel="noopener">${App.t('details.moreOptions')}</a>` : ''} · ${App.t('details.dataByJustWatch')}</div>
     </div>`;
   }
 
@@ -312,13 +313,13 @@
     if (!host) return;
     host.innerHTML = `
       <div class="section">
-        <div class="section-title">Ratings &amp; Reviews</div>
+        <div class="section-title">${App.t('details.ratingsReviews')}</div>
         <div class="rate-box" id="rate-box"></div>
         <div id="review-mine"></div>
         <div class="social-list" id="review-list"></div>
       </div>
       <div class="section">
-        <div class="section-title">Discussion</div>
+        <div class="section-title">${App.t('details.discussion')}</div>
         <div id="disc-compose"></div>
         <div class="social-list" id="disc-list"></div>
       </div>`;
@@ -331,17 +332,17 @@
     const { avg, count, mine } = await App.Social.getRatings(id, type);
     const stars = n => Array.from({ length: 10 }, (_, i) => `<button class="rstar ${i < (n || 0) ? 'on' : ''}" data-v="${i + 1}" aria-label="Rate ${i + 1}">★</button>`).join('');
     box.innerHTML = `
-      <div class="rate-community"><span class="rate-avg">${avg ? avg.toFixed(1) : '—'}</span><span class="rate-meta">${count ? `${count} user rating${count > 1 ? 's' : ''}` : 'No user ratings yet'}</span></div>
-      <div class="rate-mine"><span class="rate-label">${App.Social.isAuthed() ? 'Your rating' : 'Sign in to rate'}</span><div class="rstars">${stars(mine)}</div></div>`;
+      <div class="rate-community"><span class="rate-avg">${avg ? avg.toFixed(1) : '—'}</span><span class="rate-meta">${count ? (count === 1 ? App.t('social.ratingsOne', { n: count }) : App.t('social.ratingsMany', { n: count })) : App.t('social.noRatings')}</span></div>
+      <div class="rate-mine"><span class="rate-label">${App.Social.isAuthed() ? App.t('social.yourRating') : App.t('social.signInToRate')}</span><div class="rstars">${stars(mine)}</div></div>`;
     box.querySelectorAll('.rstar').forEach(s => s.addEventListener('click', async () => {
-      try { await App.Social.setRating(id, type, +s.dataset.v); App.Toast?.show('Rating saved', '⭐'); renderRatings(id, type); }
+      try { await App.Social.setRating(id, type, +s.dataset.v); App.Toast?.show(App.t('toast.ratingSaved'), '⭐'); renderRatings(id, type); }
       catch (e) { if (e.message !== 'Please sign in first') App.Toast?.show(e.message, '⚠️'); }
     }));
   }
 
   function authorCard(r, meId, delAttr) {
     return `<div class="social-card">
-      <div class="social-head"><span class="social-ava">${sEsc(r.profile.avatar_emoji || '🎬')}</span><span class="social-name">${sEsc(r.profile.display_name)}</span><span class="social-time">${new Date(r.created_at).toLocaleDateString()}</span>${r.user_id === meId ? `<button class="social-del" ${delAttr}="${r.id}" title="Delete">🗑</button>` : ''}</div>
+      <div class="social-head"><span class="social-ava">${sEsc(r.profile.avatar_emoji || '🎬')}</span><span class="social-name">${sEsc(r.profile.display_name)}</span><span class="social-time">${new Date(r.created_at).toLocaleDateString()}</span>${r.user_id === meId ? `<button class="social-del" ${delAttr}="${r.id}" title="${App.t('social.delete')}">🗑</button>` : ''}</div>
       <div class="social-text">${sEsc(r.body)}</div></div>`;
   }
 
@@ -352,17 +353,17 @@
     const meId = App.Auth?.user?.id;
     const myReview = reviews.find(r => r.user_id === meId);
     if (App.Social.isAuthed()) {
-      mine.innerHTML = `<div class="social-compose"><textarea id="review-text" class="social-input" rows="3" placeholder="Write your review…">${myReview ? sEsc(myReview.body) : ''}</textarea><button class="social-btn" id="review-submit">${myReview ? 'Update review' : 'Post review'}</button></div>`;
+      mine.innerHTML = `<div class="social-compose"><textarea id="review-text" class="social-input" rows="3" placeholder="${App.t('social.writeReview')}">${myReview ? sEsc(myReview.body) : ''}</textarea><button class="social-btn" id="review-submit">${myReview ? App.t('social.updateReview') : App.t('social.postReview')}</button></div>`;
       document.getElementById('review-submit').addEventListener('click', async () => {
         const t = document.getElementById('review-text').value.trim(); if (!t) return;
-        try { await App.Social.addReview(id, type, t); App.Toast?.show('Review posted', '📝'); renderReviews(id, type); }
+        try { await App.Social.addReview(id, type, t); App.Toast?.show(App.t('toast.reviewPosted'), '📝'); renderReviews(id, type); }
         catch (e) { App.Toast?.show(e.message, '⚠️'); }
       });
     } else {
-      mine.innerHTML = `<button class="social-btn ghost" id="review-signin">Sign in to write a review</button>`;
+      mine.innerHTML = `<button class="social-btn ghost" id="review-signin">${App.t('social.signInReview')}</button>`;
       document.getElementById('review-signin').addEventListener('click', () => App.Auth.open());
     }
-    list.innerHTML = reviews.length ? reviews.map(r => authorCard(r, meId, 'data-del-review')).join('') : `<p class="social-empty">No reviews yet — be the first.</p>`;
+    list.innerHTML = reviews.length ? reviews.map(r => authorCard(r, meId, 'data-del-review')).join('') : `<p class="social-empty">${App.t('social.noReviews')}</p>`;
     list.querySelectorAll('[data-del-review]').forEach(b => b.addEventListener('click', async () => { try { await App.Social.deleteReview(b.dataset.delReview); renderReviews(id, type); } catch (e) { App.Toast?.show(e.message, '⚠️'); } }));
   }
 
@@ -372,21 +373,21 @@
     const rows = await App.Social.getDiscussions(id, type);
     const meId = App.Auth?.user?.id;
     if (App.Social.isAuthed()) {
-      compose.innerHTML = `<div class="social-compose row"><input id="disc-text" class="social-input" placeholder="Add a comment…" maxlength="2000"><button class="social-btn" id="disc-submit">Send</button></div>`;
+      compose.innerHTML = `<div class="social-compose row"><input id="disc-text" class="social-input" placeholder="${App.t('social.addComment')}" maxlength="2000"><button class="social-btn" id="disc-submit">${App.t('social.send')}</button></div>`;
       const send = async () => { const t = document.getElementById('disc-text').value.trim(); if (!t) return; try { await App.Social.addDiscussion(id, type, t); document.getElementById('disc-text').value = ''; renderDiscussions(id, type); } catch (e) { App.Toast?.show(e.message, '⚠️'); } };
       document.getElementById('disc-submit').addEventListener('click', send);
       document.getElementById('disc-text').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
     } else {
-      compose.innerHTML = `<button class="social-btn ghost" id="disc-signin">Sign in to join the discussion</button>`;
+      compose.innerHTML = `<button class="social-btn ghost" id="disc-signin">${App.t('social.signInDiscuss')}</button>`;
       document.getElementById('disc-signin').addEventListener('click', () => App.Auth.open());
     }
-    list.innerHTML = rows.length ? rows.map(r => authorCard(r, meId, 'data-del-disc')).join('') : `<p class="social-empty">No comments yet.</p>`;
+    list.innerHTML = rows.length ? rows.map(r => authorCard(r, meId, 'data-del-disc')).join('') : `<p class="social-empty">${App.t('social.noComments')}</p>`;
     list.querySelectorAll('[data-del-disc]').forEach(b => b.addEventListener('click', async () => { try { await App.Social.deleteDiscussion(b.dataset.delDisc); renderDiscussions(id, type); } catch (e) { App.Toast?.show(e.message, '⚠️'); } }));
   }
 
   if (!movieId && !seriesId) {
     spinner.classList.add('hidden'); mc.classList.remove('hidden');
-    mc.innerHTML = '<p class="error-msg">Error: No movie or series ID provided.</p>';
+    mc.innerHTML = `<p class="error-msg">${App.t('details.errNoId')}</p>`;
   } else {
     const url = movieId
       ? `https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}&language=${lang}&append_to_response=videos,credits`
@@ -399,13 +400,13 @@
     ]).then(([data, similar, providers]) => {
       spinner.classList.add('hidden'); mc.classList.remove('hidden');
 
-      const title    = data.title||data.name||data.original_title||data.original_name||'Unknown';
+      const title    = data.title||data.name||data.original_title||data.original_name||App.t('common.unknown');
       const poster   = data.poster_path ? `${IMG}${data.poster_path}` : '';
       const backdrop = data.backdrop_path ? `${IMG_ORIG}${data.backdrop_path}` : poster;
       const year     = (data.release_date||data.first_air_date||'').slice(0,4)||'—';
       const rating   = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
       const votes    = data.vote_count ? data.vote_count.toLocaleString() : 'N/A';
-      const runtime  = data.runtime ? `${data.runtime} min` : (data.episode_run_time?.[0] ? `${data.episode_run_time[0]} min/ep` : 'N/A');
+      const runtime  = data.runtime ? App.t('units.min', { n: data.runtime }) : (data.episode_run_time?.[0] ? App.t('units.minPerEp', { n: data.episode_run_time[0] }) : 'N/A');
       const genres   = data.genres || [];
       const budget   = movieId ? fmt(data.budget)  : null;
       const revenue  = movieId ? fmt(data.revenue) : null;
@@ -416,11 +417,11 @@
       const isWatch = App.Store.inWatchlist(itemId, itemType);
 
       const trailerKey = data.videos?.results?.find(v=>v.site==='YouTube'&&v.type==='Trailer')?.key;
-      const trailerHtml = trailerKey ? `<div class="section"><div class="section-title">Trailer</div>
+      const trailerHtml = trailerKey ? `<div class="section"><div class="section-title">${App.t('details.trailer')}</div>
         <div class="trailer-wrap"><iframe src="https://www.youtube.com/embed/${trailerKey}" allowfullscreen loading="lazy"></iframe></div></div>` : '';
 
-      const castSection = peopleSection('cast','Cast', data.credits?.cast||[], 'character', 8);
-      const crewSection = peopleSection('crew','Crew', data.credits?.crew||[], 'job', 8);
+      const castSection = peopleSection('cast',App.t('details.cast'), data.credits?.cast||[], 'character', 8);
+      const crewSection = peopleSection('crew',App.t('details.crew'), data.credits?.crew||[], 'job', 8);
       const simHtml     = similarRow(similar, itemType);
       const provHtml    = providersSection(providers);
 
@@ -433,14 +434,14 @@
               <div class="poster-box">
                 <img class="poster" src="${poster}" alt="${title}">
                 <div class="poster-actions">
-                  <button class="pa-btn ${isFav?'pa-fav-on':''}" id="pa-fav">♥ <span>${isFav?'Favourited':'Favourite'}</span></button>
-                  <button class="pa-btn ${isWatch?'pa-watch-on':''}" id="pa-watch">🔖 <span>${isWatch?'In List':'Watchlist'}</span></button>
+                  <button class="pa-btn ${isFav?'pa-fav-on':''}" id="pa-fav">♥ <span>${isFav?App.t('details.favourited'):App.t('details.favourite')}</span></button>
+                  <button class="pa-btn ${isWatch?'pa-watch-on':''}" id="pa-watch">🔖 <span>${isWatch?App.t('details.inList'):App.t('profile.watchlist')}</span></button>
                 </div>
               </div>
               <div class="watch-cta">
                 <button class="stream-btn" id="watch-btn" ${trailerKey ? '' : 'disabled'}>
                   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
-                  ${trailerKey ? 'Play Trailer' : 'No Trailer'}
+                  ${trailerKey ? App.t('details.playTrailer') : App.t('details.noTrailer')}
                 </button>
               </div>
             </div>` : ''}
@@ -448,20 +449,20 @@
               <h1 class="hero-title">${title}</h1>
               ${genres.length?`<div class="genre-pills">${genres.map(g=>`<a href="genre.html?genreId=${g.id}&genreName=${encodeURIComponent(g.name)}" class="pill">${g.name}</a>`).join('')}</div>`:''}
               ${data.tagline?`<p class="tagline">"${data.tagline}"</p>`:''}
-              <p class="overview">${data.overview||'No description available.'}</p>
+              <p class="overview">${data.overview||App.t('details.noDescription')}</p>
               <div class="stats-grid">
-                <div class="stat"><span class="stat-label">Rating</span><span class="stat-value gold">★ ${rating}</span></div>
-                <div class="stat"><span class="stat-label">Votes</span><span class="stat-value">${votes}</span></div>
-                <div class="stat"><span class="stat-label">Year</span><span class="stat-value">${year}</span></div>
-                <div class="stat"><span class="stat-label">Runtime</span><span class="stat-value">${runtime}</span></div>
-                <div class="stat"><span class="stat-label">Language</span><span class="stat-value">${data.original_language?.toUpperCase()||'—'}</span></div>
-                <div class="stat"><span class="stat-label">Status</span><span class="stat-value">${data.status||'—'}</span></div>
-                <div class="stat"><span class="stat-label">Popularity</span><span class="stat-value">${data.popularity?Math.round(data.popularity):'N/A'}</span></div>
-                ${budget?`<div class="stat"><span class="stat-label">Budget</span><span class="stat-value">${budget}</span></div>`:''}
-                ${revenue?`<div class="stat"><span class="stat-label">Revenue</span><span class="stat-value green">${revenue}</span></div>`:''}
-                ${profit!==null?`<div class="stat"><span class="stat-label">Profit</span><span class="stat-value ${profit>=0?'green':'red'}">${profit>=0?'+':''}${fmt(profit)}</span></div>`:''}
-                ${data.number_of_seasons?`<div class="stat"><span class="stat-label">Seasons</span><span class="stat-value">${data.number_of_seasons}</span></div>`:''}
-                ${data.number_of_episodes?`<div class="stat"><span class="stat-label">Episodes</span><span class="stat-value">${data.number_of_episodes}</span></div>`:''}
+                <div class="stat"><span class="stat-label">${App.t('stat.rating')}</span><span class="stat-value gold">★ ${rating}</span></div>
+                <div class="stat"><span class="stat-label">${App.t('stat.votes')}</span><span class="stat-value">${votes}</span></div>
+                <div class="stat"><span class="stat-label">${App.t('stat.year')}</span><span class="stat-value">${year}</span></div>
+                <div class="stat"><span class="stat-label">${App.t('stat.runtime')}</span><span class="stat-value">${runtime}</span></div>
+                <div class="stat"><span class="stat-label">${App.t('stat.language')}</span><span class="stat-value">${data.original_language?.toUpperCase()||'—'}</span></div>
+                <div class="stat"><span class="stat-label">${App.t('stat.status')}</span><span class="stat-value">${data.status||'—'}</span></div>
+                <div class="stat"><span class="stat-label">${App.t('stat.popularity')}</span><span class="stat-value">${data.popularity?Math.round(data.popularity):'N/A'}</span></div>
+                ${budget?`<div class="stat"><span class="stat-label">${App.t('stat.budget')}</span><span class="stat-value">${budget}</span></div>`:''}
+                ${revenue?`<div class="stat"><span class="stat-label">${App.t('stat.revenue')}</span><span class="stat-value green">${revenue}</span></div>`:''}
+                ${profit!==null?`<div class="stat"><span class="stat-label">${App.t('stat.profit')}</span><span class="stat-value ${profit>=0?'green':'red'}">${profit>=0?'+':''}${fmt(profit)}</span></div>`:''}
+                ${data.number_of_seasons?`<div class="stat"><span class="stat-label">${App.t('stat.seasons')}</span><span class="stat-value">${data.number_of_seasons}</span></div>`:''}
+                ${data.number_of_episodes?`<div class="stat"><span class="stat-label">${App.t('stat.episodes')}</span><span class="stat-value">${data.number_of_episodes}</span></div>`:''}
               </div>
             </div>
           </div>
@@ -479,16 +480,16 @@
         const btn = document.getElementById('pa-fav');
         const added = App.Store.toggleFavorite(itemMeta);
         btn.classList.toggle('pa-fav-on', added);
-        btn.querySelector('span').textContent = added ? 'Favourited' : 'Favourite';
-        App.Toast.show(added?'Added to Favourites':'Removed from Favourites', added?'♥':'💔');
+        btn.querySelector('span').textContent = added ? App.t('details.favourited') : App.t('details.favourite');
+        App.Toast.show(added?App.t('toast.addedFav'):App.t('toast.removedFav'), added?'♥':'💔');
         App.Profile.refresh();
       });
       document.getElementById('pa-watch')?.addEventListener('click', () => {
         const btn = document.getElementById('pa-watch');
         const added = App.Store.toggleWatchlist(itemMeta);
         btn.classList.toggle('pa-watch-on', added);
-        btn.querySelector('span').textContent = added ? 'In List' : 'Watchlist';
-        App.Toast.show(added?'Added to Watchlist':'Removed from Watchlist', added?'🔖':'📋');
+        btn.querySelector('span').textContent = added ? App.t('details.inList') : App.t('profile.watchlist');
+        App.Toast.show(added?App.t('toast.addedWatch'):App.t('toast.removedWatch'), added?'🔖':'📋');
         App.Profile.refresh();
       });
 
@@ -497,7 +498,7 @@
         btn.addEventListener('click', () => {
           const el = document.getElementById(`extra-${btn.dataset.target}`);
           const h  = el.classList.toggle('hidden');
-          btn.textContent = h ? 'Show more' : 'Show less';
+          btn.textContent = h ? App.t('common.showMore') : App.t('common.showLess');
         });
       });
 
@@ -505,7 +506,7 @@
 
     }).catch(err => {
       spinner.classList.add('hidden'); mc.classList.remove('hidden');
-      mc.innerHTML = '<p class="error-msg">Failed to load details. Please try again.</p>';
+      mc.innerHTML = `<p class="error-msg">${App.t('details.failed')}</p>`;
       console.error(err);
     });
   }
