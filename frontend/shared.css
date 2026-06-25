@@ -44,7 +44,7 @@
 
 /* ── BASE RESET ──────────────────────────── */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-html { scroll-behavior: smooth; overflow-x: clip; }
+html { scroll-behavior: smooth; }
 body {
   font-family: 'Shantell Sans', sans-serif;
   background: var(--bg); color: var(--text);
@@ -399,20 +399,26 @@ img { display: block; }
 @media (max-width: 860px) {
   .nav-search-kbd { display: none; }
   .nav-hamburger { display: flex; }
+  .nav-logo { font-size: 1.45rem; }
+  /* Mobile menu = a full-width dropdown panel under the nav (slides down).
+     NOT an off-canvas side-drawer — a side-drawer parked at translateX(100%)
+     extends the page to the right and causes horizontal overflow on browsers
+     without `overflow:clip`. A top panel stays inside the viewport. */
   .nav-links {
-    position: fixed; inset-block: 0; right: 0; width: min(280px,82vw);
+    position: fixed; top: var(--nav-h); left: 0; right: 0;
     background: var(--surface); flex-direction: column;
-    border-left: 1px solid var(--border);
-    box-shadow: -10px 0 40px rgba(0,0,0,.5);
-    padding: 5.5rem 1.5rem 2rem; gap: 0; z-index: 299;
-    transform: translateX(100%);
-    transition: transform .32s cubic-bezier(.4,0,.2,1);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 14px 34px rgba(0,0,0,.5);
+    padding: .4rem 1rem 1rem; gap: 0; z-index: 299;
+    transform: translateY(-14px); opacity: 0; visibility: hidden;
+    transition: transform .25s ease, opacity .25s ease, visibility .25s;
   }
-  .nav-links.open { transform: translateX(0); }
+  .nav-links.open { transform: translateY(0); opacity: 1; visibility: visible; }
   .nav-links a {
     padding: .9rem .5rem; font-size: 1.05rem;
     border-bottom: 1px solid var(--border); border-radius: 0;
   }
+  .nav-links a:last-child { border-bottom: none; }
   .nav-search     { max-width: none; flex: 1 1 auto; min-width: 0; }
   .nav-search-box { min-width: 0; }
   .profile-label, .profile-caret { display: none; }
