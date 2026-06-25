@@ -400,12 +400,14 @@ img { display: block; }
   .nav-search-kbd { display: none; }
   .nav-hamburger { display: flex; }
   .nav-logo { font-size: 1.45rem; }
-  /* Mobile menu = a full-width dropdown panel under the nav (slides down).
-     NOT an off-canvas side-drawer — a side-drawer parked at translateX(100%)
-     extends the page to the right and causes horizontal overflow on browsers
-     without `overflow:clip`. A top panel stays inside the viewport. */
+  /* Mobile menu = a full-width dropdown panel that drops from the bottom edge
+     of the nav (slides down). NOT an off-canvas side-drawer — a side-drawer
+     parked at translateX(100%) extends the page right and causes horizontal
+     overflow on browsers without `overflow:clip`. `position:absolute; top:100%`
+     anchors it to the nav's REAL bottom, so when the nav wraps taller at narrow
+     widths (search on its own row) the panel still sits cleanly below it. */
   .nav-links {
-    position: fixed; top: var(--nav-h); left: 0; right: 0;
+    position: absolute; top: 100%; left: 0; right: 0;
     background: var(--surface); flex-direction: column;
     border-bottom: 1px solid var(--border);
     box-shadow: 0 14px 34px rgba(0,0,0,.5);
@@ -421,6 +423,10 @@ img { display: block; }
   .nav-links a:last-child { border-bottom: none; }
   .nav-search     { max-width: none; flex: 1 1 auto; min-width: 0; }
   .nav-search-box { min-width: 0; }
+  /* 16px is the threshold below which iOS/Android auto-zoom into an input on
+     focus and never zoom back out (the "screen won't return to normal size"
+     bug). Desktop keeps the smaller .875rem; only mobile needs the bump. */
+  .nav-search-input { font-size: 16px; }
   .profile-label, .profile-caret { display: none; }
   .lang-current   { display: none; }
   .lang-btn       { padding: 5px 8px; }

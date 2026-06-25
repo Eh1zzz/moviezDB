@@ -34,18 +34,27 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Generate config.js from secrets
+        # TMDB key MUST come from the repo secret — never commit it (it's the
+        # borrowed/dev key we don't ship). The Supabase URL + anon key are
+        # public-safe (anon keys are meant to live in client code, guarded by
+        # Row Level Security), so they fall back to this project's own values
+        # when the secrets aren't set — that way accounts / reviews / ratings /
+        # discussions work the moment you deploy, with no extra setup. A buyer
+        # just sets their own SUPABASE_* secrets (or edits config.example.js).
         run: |
           cat > frontend/config.js <<EOF
           window.MOVIEZDB_CONFIG = {
-            TMDB_KEY: '${{ secrets.TMDB_KEY }}',
+            TMDB_KEY: '${TMDB_KEY}',
             DEFAULT_LANG: 'en',
-            SUPABASE_URL: '${{ secrets.SUPABASE_URL }}',
-            SUPABASE_ANON_KEY: '${{ secrets.SUPABASE_ANON_KEY }}',
+            SUPABASE_URL: '${SUPABASE_URL:-https://lfemwowmirdiqiorcufn.supabase.co}',
+            SUPABASE_ANON_KEY: '${SUPABASE_ANON_KEY:-sb_publishable_vCoBDV7rtjl6Ka5IHIvdTA_ryywqSgt}',
           };
           EOF
-          echo "Wrote config.js (TMDB_KEY length: ${#TMDB_KEY_LEN})"
+          echo "Wrote config.js (TMDB_KEY length: ${#TMDB_KEY}, Supabase URL: ${SUPABASE_URL:-default})"
         env:
-          TMDB_KEY_LEN: ${{ secrets.TMDB_KEY }}
+          TMDB_KEY: ${{ secrets.TMDB_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - uses: actions/configure-pages@v5
         with:
